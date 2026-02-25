@@ -443,6 +443,166 @@
     width: 100%;
 }
 
+/* ================================
+   Leaflet Custom Marker
+   ================================ */
+.custom-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.marker-pin {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    position: relative;
+    z-index: 2;
+}
+
+.marker-pin::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid var(--primary);
+}
+
+.marker-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: pulse 2s ease-out infinite;
+    z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 0;
+}
+
+.leaflet-popup-content {
+    margin: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.leaflet-container {
+    font-family: var(--font-sans);
+}
+
+/* ================================
+   Map Placeholder (No API Key)
+   ================================ */
+.map-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-placeholder-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+.map-placeholder-label {
+    position: absolute;
+    bottom: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--gray-700);
+    z-index: 5;
+}
+
+.map-placeholder-hint {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-1);
+}
+
+.map-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -100%);
+    z-index: 10;
+}
+
+.map-marker-pin {
+    width: 48px;
+    height: 48px;
+    background-color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    position: relative;
+}
+
+.map-marker-pin::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 12px solid var(--primary);
+}
+
+.map-marker-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background-color: var(--primary);
+    opacity: 0.2;
+    animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+    }
+}
+
 /* Tablet and up */
 @media (min-width: 769px) {
     .map-section {

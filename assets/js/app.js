@@ -67,7 +67,7 @@ class SmartPathApp {
                                     </div>
                                     <div class="tracker-item">
                                         <span class="tracker-label">Location</span>
-                                        <span class="tracker-value">Manila, PH</span>
+                                        <span class="tracker-value">Ormoc City, Leyte</span>
                                     </div>
                                 </div>
                                 <button class="btn btn-primary btn-sm tracker-btn">
@@ -82,83 +82,86 @@ class SmartPathApp {
     }
 
     /**
-     * Initialize Google Map
+     * Initialize Leaflet Map with Satellite Mode
      */
     initMap() {
         const mapElement = document.getElementById('google-map');
         if (!mapElement) return;
 
-        // Default location (Manila, Philippines)
-        const defaultLocation = { lat: 14.5995, lng: 120.9842 };
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.warn('Leaflet not loaded');
+            return;
+        }
 
-        // Create map
-        const map = new google.maps.Map(mapElement, {
-            zoom: 15,
-            center: defaultLocation,
-            mapTypeId: 'roadmap',
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            zoomControl: true,
-            styles: [
-                {
-                    featureType: 'poi',
-                    elementType: 'labels',
-                    stylers: [{ visibility: 'off' }]
-                }
-            ]
-        });
+        // Default location (Ormoc City, Leyte, Philippines)
+        const defaultLocation = [11.0056, 124.6075];
 
-        // Add marker
-        const marker = new google.maps.Marker({
-            position: defaultLocation,
-            map: map,
-            title: 'SmartPath Cane Location',
-            animation: google.maps.Animation.DROP,
-            icon: {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                        <circle cx="20" cy="20" r="18" fill="#2563eb" stroke="#ffffff" stroke-width="3"/>
-                        <text x="20" y="25" text-anchor="middle" fill="white" font-size="18">🦯</text>
-                    </svg>
-                `),
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20)
-            }
-        });
+        try {
+            // Create map
+            const map = L.map('google-map', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView(defaultLocation, 16);
 
-        // Add accuracy circle
-        const circle = new google.maps.Circle({
-            map: map,
-            center: defaultLocation,
-            radius: 100,
-            fillColor: '#2563eb',
-            fillOpacity: 0.1,
-            strokeColor: '#2563eb',
-            strokeOpacity: 0.3,
-            strokeWeight: 1
-        });
+            // Add satellite tile layer (Esri World Imagery)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 19
+            }).addTo(map);
 
-        // Simulate movement (demo only)
-        this.simulateTrackerMovement(map, marker, circle);
+            // Add labels layer on top
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                opacity: 0.7
+            }).addTo(map);
+
+            // Custom icon
+            const caneIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '<div class="marker-pin">🦯</div><div class="marker-pulse"></div>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+
+            // Add marker
+            const marker = L.marker(defaultLocation, { icon: caneIcon }).addTo(map);
+
+            // Add accuracy circle
+            const circle = L.circle(defaultLocation, {
+                color: '#2563eb',
+                fillColor: '#2563eb',
+                fillOpacity: 0.1,
+                radius: 100
+            }).addTo(map);
+
+            // Add popup
+            marker.bindPopup('<b>SmartPath Cane</b><br>Device: SPC-001<br>Battery: 85%');
+
+            // Simulate movement (demo only)
+            this.simulateLeafletMovement(map, marker, circle);
+
+        } catch (error) {
+            console.error('Error initializing map:', error);
+        }
     }
 
     /**
      * Simulate tracker movement for demo
      */
-    simulateTrackerMovement(map, marker, circle) {
+    simulateLeafletMovement(map, marker, circle) {
         let angle = 0;
-        const radius = 0.001;
-        const center = { lat: 14.5995, lng: 120.9842 };
+        const radius = 0.0005;
+        const center = [11.0056, 124.6075];
 
         setInterval(() => {
             angle += 0.1;
-            const newLat = center.lat + radius * Math.cos(angle);
-            const newLng = center.lng + radius * Math.sin(angle);
-            const newPosition = { lat: newLat, lng: newLng };
+            const newLat = center[0] + radius * Math.cos(angle);
+            const newLng = center[1] + radius * Math.sin(angle);
+            const newPosition = [newLat, newLng];
 
-            marker.setPosition(newPosition);
-            circle.setCenter(newPosition);
+            marker.setLatLng(newPosition);
+            circle.setLatLng(newPosition);
             map.panTo(newPosition);
         }, 3000);
     }

@@ -4,26 +4,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Path Cane</title>
+    <meta name="description"
+        content="SmartPath Cane - Advanced navigation technology with real-time tracking and emergency alerts for enhanced mobility and safety.">
+    <meta name="theme-color" content="#2563eb">
 
-    <!-- Config and API Client -->
-    <script src="public/config.js"></script>
-    <script src="public/api.js"></script>
+    <title>SmartPath Cane - Smart Navigation for Everyone</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦯</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+
+    <!-- Configuration -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
 </head>
 
 <body>
+    <!-- App Container -->
     <div id="app">
-        <h1>Smart Path Cane</h1>
-        <p>Loading...</p>
+        <!-- Content will be rendered by app.js -->
+        <div class="loading-screen">
+            <div class="spinner"></div>
+            <p>Loading SmartPath Cane...</p>
+        </div>
     </div>
 
+    <!-- Main Application Script -->
+    <script src="assets/js/app.js"></script>
+
+    <!-- Initialize -->
     <script>
-        // Frontend → Hostinger Backend → Supabase Database
+        // Log environment info
+        console.log('%c SmartPath Cane ', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px;');
         console.log('Environment:', CONFIG.ENV);
         console.log('API URL:', CONFIG.API_URL);
     </script>
-
 </body>
 
 </html>

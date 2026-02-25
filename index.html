@@ -26,6 +26,10 @@
     <!-- Configuration -->
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+
+    <!-- Google Maps API - Replace YOUR_API_KEY with your actual Google Maps API key -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMapCallback">
+    </script>
 </head>
 
 <body>
@@ -40,6 +44,14 @@
 
     <!-- Main Application Script -->
     <script src="assets/js/app.js"></script>
+
+    <!-- Google Maps Callback -->
+    <script>
+        function initMapCallback() {
+            console.log('Google Maps API loaded');
+            // Map will be initialized by app.js after render
+        }
+    </script>
 
     <!-- Initialize -->
     <script>

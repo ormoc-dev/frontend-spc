@@ -1,0 +1,19 @@
+# Netlify Free Tier Configuration
+# No build command needed for static HTML/CSS/JS
+
+[build]
+  publish = "."
+
+# Redirect rules for SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security (all free)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

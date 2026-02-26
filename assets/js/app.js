@@ -207,7 +207,7 @@ class SmartPathApp {
             <section class="hero">
                 <div class="container">
                     <div class="hero-content">
-                        <h1 class="hero-title">Smart Navigation for Everyone</h1>
+                        <h1 class="hero-title">SmartPath for Everyone</h1>
                         <p class="hero-description">
                             Advanced smart cane technology with real-time location tracking, 
                             emergency alerts, and caregiver connectivity.
@@ -339,18 +339,212 @@ class SmartPathApp {
      * Handle login click
      */
     handleLogin() {
-        console.log('Login clicked');
-        // TODO: Implement login modal or redirect
-        alert('Login functionality coming soon!');
+        this.showAuthModal('login');
     }
 
     /**
-     * Handle get started click
+     * Handle get started click - Show registration modal
      */
     handleGetStarted() {
-        console.log('Get started clicked');
-        // TODO: Implement registration or onboarding
-        alert('Registration coming soon!');
+        this.showAuthModal('register');
+    }
+
+    /**
+     * Show authentication modal
+     */
+    showAuthModal(mode = 'login') {
+        // Remove existing modal
+        const existingModal = document.getElementById('auth-modal');
+        if (existingModal) existingModal.remove();
+
+        const isLogin = mode === 'login';
+
+        const modal = document.createElement('div');
+        modal.id = 'auth-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button class="modal-close" id="modal-close">&times;</button>
+                <h2 class="modal-title">${isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+                <p class="modal-subtitle">${isLogin ? 'Sign in to your account' : 'Join SmartPath Cane today'}</p>
+                
+                <form id="auth-form" class="auth-form">
+                    ${!isLogin ? `
+                        <div class="form-group">
+                            <label class="form-label" for="fullname">Full Name</label>
+                            <input type="text" id="fullname" name="fullname" class="form-input" placeholder="Enter your full name" required>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required minlength="6">
+                    </div>
+                    
+                    ${!isLogin ? `
+                        <div class="form-group">
+                            <label class="form-label" for="confirm-password">Confirm Password</label>
+                            <input type="password" id="confirm-password" name="confirm-password" class="form-input" placeholder="Confirm your password" required minlength="6">
+                        </div>
+                    ` : ''}
+                    
+                    <div id="auth-error" class="auth-error"></div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">
+                        ${isLogin ? 'Sign In' : 'Create Account'}
+                    </button>
+                </form>
+                
+                <div class="modal-footer">
+                    <p>${isLogin ? "Don't have an account?" : 'Already have an account?'}</p>
+                    <button class="btn btn-link" id="auth-switch">
+                        ${isLogin ? 'Sign Up' : 'Sign In'}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        // Focus first input
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input');
+            if (firstInput) firstInput.focus();
+        }, 100);
+
+        // Event listeners
+        document.getElementById('modal-close').addEventListener('click', () => this.closeAuthModal());
+        document.querySelector('.modal-overlay').addEventListener('click', () => this.closeAuthModal());
+        document.getElementById('auth-switch').addEventListener('click', () => this.showAuthModal(isLogin ? 'register' : 'login'));
+        document.getElementById('auth-form').addEventListener('submit', (e) => this.handleAuthSubmit(e, mode));
+    }
+
+    /**
+     * Close authentication modal
+     */
+    closeAuthModal() {
+        const modal = document.getElementById('auth-modal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Handle authentication form submission
+     */
+    async handleAuthSubmit(e, mode) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('auth-submit');
+        const errorDiv = document.getElementById('auth-error');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = mode === 'login' ? 'Signing In...' : 'Creating Account...';
+        errorDiv.textContent = '';
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        if (mode === 'register') {
+            const confirmPassword = document.getElementById('confirm-password').value;
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+                return;
+            }
+        }
+
+        try {
+            let response;
+
+            if (mode === 'login') {
+                response = await AuthAPI.login(email, password);
+            } else {
+                const fullname = document.getElementById('fullname').value;
+                response = await AuthAPI.register({
+                    email,
+                    password,
+                    fullname
+                });
+            }
+
+            if (response.success) {
+                // Store token
+                if (response.data?.token) {
+                    localStorage.setItem('auth_token', response.data.token);
+                    api.setToken(response.data.token);
+                }
+
+                this.currentUser = response.data?.user || null;
+                this.closeAuthModal();
+                this.showDashboard();
+            } else {
+                errorDiv.textContent = response.error || 'Authentication failed';
+            }
+        } catch (error) {
+            console.error('Auth error:', error);
+            errorDiv.textContent = error.message || 'Network error. Please try again.';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+        }
+    }
+
+    /**
+     * Show dashboard after login
+     */
+    showDashboard() {
+        // Update UI to show logged in state
+        const loginBtn = document.getElementById('btn-login');
+        const loginBtnMobile = document.getElementById('btn-login-mobile');
+
+        if (loginBtn) {
+            loginBtn.textContent = 'Dashboard';
+            loginBtn.onclick = () => this.showUserDashboard();
+        }
+
+        if (loginBtnMobile) {
+            loginBtnMobile.textContent = 'Dashboard';
+            loginBtnMobile.onclick = () => this.showUserDashboard();
+        }
+
+        // Show success message
+        this.showToast('Welcome to SmartPath Cane!', 'success');
+    }
+
+    /**
+     * Show user dashboard
+     */
+    showUserDashboard() {
+        alert('Dashboard coming soon! Here you will see:\n- Your devices\n- Location history\n- Alerts\n- Settings');
+    }
+
+    /**
+     * Show toast notification
+     */
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     /**

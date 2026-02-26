@@ -4,11 +4,11 @@ const CONFIG = {
 
     API_URL: window.location.hostname === 'localhost'
         ? 'http://localhost/smartpathcane/backend-spc/public/index.php'
-        : 'https://your-domain.com/backend-spc/public/index.php',
+        : 'https://ormoc.ejeepdev.site/backend-spc/public/index.php',
 
 
     APP_NAME: 'SmartPath Cane',
-    VERSION: '1.0.1', // Bumped version to clear cache
+    VERSION: '1.0.2', // Bumped version to clear cache
 
 
     CACHE_DURATION: 300000,

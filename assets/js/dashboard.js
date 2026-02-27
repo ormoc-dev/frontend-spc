@@ -36,20 +36,35 @@ const Dashboard = {
     /**
      * Play SOS alert sound using alarm.mp3
      */
-    playSOSAlertSound() {
-        try {
-            // Use the provided alarm.mp3 file
-            const audio = new Audio('assets/audio/alarm.mp3');
-            audio.volume = 0.7;
-            audio.play().catch(e => {
-                console.error('Audio play failed:', e);
-                // Fallback to generated sound if mp3 fails
-                this.playFallbackSOSAlertSound();
-            });
-        } catch (e) {
-            console.error('SOS sound play failed:', e);
-            this.playFallbackSOSAlertSound();
+    async playSOSAlertSound() {
+        // Use the provided alarm.mp3 file - adjust path based on context
+        // The dashboard might be loaded from a different context than the frontend root
+        const audioPaths = [
+            'assets/audio/alarm.mp3',           // Standard path
+            '../assets/audio/alarm.mp3',      // Path from dashboard context
+            '../../assets/audio/alarm.mp3',   // Alternative path
+            './assets/audio/alarm.mp3'        // Relative path
+        ];
+
+        // Try each path until one works
+        for (const path of audioPaths) {
+            try {
+                const audio = new Audio(path);
+                audio.volume = 0.7;
+
+                // Try to play the audio
+                await audio.play();
+                console.log('Audio played successfully from:', path);
+                return; // Success, exit function
+            } catch (err) {
+                console.debug(`Audio path failed: ${path}`, err);
+                // Continue to next path
+            }
         }
+
+        // If no audio path worked after trying all, use fallback
+        console.warn('All audio paths failed, using fallback sound');
+        this.playFallbackSOSAlertSound();
     },
 
     /**
@@ -99,7 +114,7 @@ const Dashboard = {
                 if (this.lastAlertId && alertId !== this.lastAlertId) {
                     // New alert received - play sound if it's an emergency type
                     if (latestAlert.alert_type === 'sos' || latestAlert.alert_type === 'fall') {
-                        this.playSOSAlertSound();
+                        await this.playSOSAlertSound();
                     }
 
                     // Show toast notification
@@ -141,8 +156,8 @@ const Dashboard = {
         this.checkSOSAlerts();
 
         // Check every 5 seconds
-        this.sosCheckInterval = setInterval(() => {
-            this.checkSOSAlerts();
+        this.sosCheckInterval = setInterval(async () => {
+            await this.checkSOSAlerts();
         }, 5000);
     },
 

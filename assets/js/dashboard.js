@@ -28,12 +28,12 @@ const Dashboard = {
         const savedTab = localStorage.getItem('dashboard_current_tab') || 'overview';
         this.loadTab(savedTab);
 
+        // Initialize audio context to bypass autoplay restrictions
+        this.initAudioContext();
+
         // Initialize last alert ID and start checking for alerts
         this.lastAlertId = null;
         this.startSOSAlertCheck();
-
-        // Initialize audio context to bypass autoplay restrictions
-        this.initAudioContext();
     },
 
     /**
@@ -42,31 +42,43 @@ const Dashboard = {
     initAudioContext() {
         // Create a global audio context to be used for sound effects
         const AudioContext = window.AudioContext || window.webkitAudioContext;
+
         if (typeof window.dashboardAudioContext === 'undefined') {
             window.dashboardAudioContext = new AudioContext();
+        }
 
-            // Resume if suspended (which it usually is after page load)
-            if (window.dashboardAudioContext.state === 'suspended') {
-                // Attempt to resume on first user interaction
-                const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+        // Always try to resume if suspended (which it usually is after page load)
+        if (window.dashboardAudioContext.state === 'suspended') {
+            // Attempt to resume on first user interaction
+            const events = ['click', 'touchstart', 'keydown', 'mousedown'];
 
-                const unlockAudio = () => {
-                    window.dashboardAudioContext.resume().then(() => {
-                        console.log('Audio Context unlocked');
+            const unlockAudio = () => {
+                window.dashboardAudioContext.resume().then(() => {
+                    console.log('Audio Context unlocked');
 
-                        // Remove event listeners after unlocking
-                        events.forEach(event => {
-                            document.removeEventListener(event, unlockAudio);
-                        });
-                    }).catch(e => {
-                        console.warn('Could not unlock audio:', e);
+                    // Remove event listeners after unlocking
+                    events.forEach(event => {
+                        document.removeEventListener(event, unlockAudio);
                     });
-                };
-
-                events.forEach(event => {
-                    document.addEventListener(event, unlockAudio, { once: true });
+                }).catch(e => {
+                    console.warn('Could not unlock audio:', e);
                 });
-            }
+            };
+
+            events.forEach(event => {
+                document.addEventListener(event, unlockAudio, { once: true });
+            });
+        }
+
+        // Also try to resume periodically in case it gets suspended again
+        if (!window.audioContextResumeInterval) {
+            window.audioContextResumeInterval = setInterval(() => {
+                if (window.dashboardAudioContext && window.dashboardAudioContext.state === 'suspended') {
+                    window.dashboardAudioContext.resume().catch(e => {
+                        // Silence this error as it's expected until user interacts
+                    });
+                }
+            }, 1000);
         }
     },
 
@@ -103,7 +115,6 @@ const Dashboard = {
      * Play SOS alert sound using alarm.mp3
      */
     async playSOSAlertSound() {
-        // Modern browsers require user interaction for audio autoplay
         // Ensure the audio context is ready
         if (!window.dashboardAudioContext) {
             this.initAudioContext();
@@ -146,6 +157,13 @@ const Dashboard = {
         // If no audio path worked after trying all, use fallback
         console.warn('All audio paths failed, using fallback sound');
         this.playFallbackSOSAlertSound();
+    },
+
+    /**
+     * Check if audio context is ready
+     */
+    isAudioContextReady() {
+        return window.dashboardAudioContext && window.dashboardAudioContext.state === 'running';
     },
 
     /**
@@ -231,7 +249,11 @@ const Dashboard = {
                     if (latestAlert.alert_type === 'sos' || latestAlert.alert_type === 'fall') {
                         // Defer playing the sound to avoid autoplay restrictions
                         // Schedule the sound to play after the current call stack clears
-                        setTimeout(() => {
+                        setTimeout(async () => {
+                            // Ensure audio context is ready before playing
+                            if (window.dashboardAudioContext && window.dashboardAudioContext.state === 'suspended') {
+                                await window.dashboardAudioContext.resume();
+                            }
                             this.playSOSAlertSound();
                         }, 0);
                     }

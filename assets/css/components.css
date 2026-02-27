@@ -548,6 +548,20 @@
 }
 
 /* ================================
+   Leaflet Map High Quality Rendering
+   ================================ */
+.leaflet-container {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+.leaflet-tile {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* ================================
    Leaflet Custom Marker
    ================================ */
 .custom-marker {
@@ -1564,6 +1578,30 @@
 
 .device-actions-full {
     flex-wrap: wrap;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state p {
+    font-size: var(--text-sm);
+    color: var(--gray-500);
 }
 
 /* Full Map */

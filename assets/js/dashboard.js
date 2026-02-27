@@ -35,7 +35,7 @@ const Dashboard = {
             <header class="dashboard-header">
                 <div class="dashboard-header-brand">
                     <span class="dashboard-header-icon">🦯</span>
-                    <span>SmartPath</span>
+                    <span>S.P.C</span>
                 </div>
                 <div class="dashboard-header-actions">
                     <button class="btn btn-outline btn-sm" id="btn-back">
@@ -119,6 +119,7 @@ const Dashboard = {
                 break;
             case 'devices':
                 container.innerHTML = this.renderDevices();
+                this.loadDevices();
                 break;
             case 'locations':
                 container.innerHTML = this.renderLocations();
@@ -241,39 +242,160 @@ const Dashboard = {
                 <div>
                     <h1 class="dashboard-title">My Devices</h1>
                 </div>
-                <button class="btn btn-primary btn-sm">+ Add Device</button>
+                <button class="btn btn-primary btn-sm" id="btn-add-device">+ Add Device</button>
             </div>
 
             <div class="dashboard-card">
                 <div class="dashboard-card-body">
-                    <div class="device-list">
-                        <div class="device-item">
-                            <div class="device-header">
-                                <div class="device-info">
-                                    <span class="device-icon">🦯</span>
-                                    <div class="device-details">
-                                        <div class="device-name">SmartPath Cane #1</div>
-                                        <div class="device-id">SPC-001</div>
-                                    </div>
-                                </div>
-                                <div class="device-status">
-                                    <div class="device-battery">
-                                        <div class="battery-bar"><div class="battery-fill" style="width:85%"></div></div>
-                                        <span>85%</span>
-                                    </div>
-                                    <span class="status-badge status-online">Online</span>
-                                </div>
-                            </div>
-                            <div class="device-actions device-actions-full">
-                                <button class="btn btn-outline btn-sm">📍 Track</button>
-                                <button class="btn btn-outline btn-sm">⚙️ Settings</button>
-                                <button class="btn btn-outline btn-sm">📊 History</button>
-                            </div>
+                    <div class="device-list" id="device-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">🦯</div>
+                            <h3>No devices yet</h3>
+                            <p>Add your first SmartPath Cane to get started.</p>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * Show add device modal
+     */
+    showAddDeviceModal() {
+        const content = `
+            <h2 class="modal-title">Add New Device</h2>
+            <p class="modal-subtitle">Register your SmartPath Cane</p>
+            
+            <form class="auth-form" id="add-device-form">
+                <div class="auth-error" id="device-error"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Device Serial Number *</label>
+                    <input type="text" class="form-input" id="device-serial" required placeholder="e.g., SPC-001-ABC123">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Device Name (Optional)</label>
+                    <input type="text" class="form-input" id="device-name" placeholder="e.g., Dad's Cane">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Device Model</label>
+                    <select class="form-select" id="device-model">
+                        <option value="SPC-001">SmartPath Cane SPC-001</option>
+                        <option value="SPC-002">SmartPath Cane SPC-002 (Pro)</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-device">
+                    Register Device
+                </button>
+            </form>
+        `;
+
+        this.deviceModal = UI.showModal(content);
+        this.attachDeviceModalListeners();
+    },
+
+    /**
+     * Attach device modal listeners
+     */
+    attachDeviceModalListeners() {
+        const form = document.getElementById('add-device-form');
+        const errorDiv = document.getElementById('device-error');
+
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.textContent = '';
+
+            const submitBtn = document.getElementById('btn-submit-device');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registering...';
+
+            const data = {
+                device_serial: document.getElementById('device-serial').value.trim(),
+                device_name: document.getElementById('device-name').value.trim() || null,
+                device_model: document.getElementById('device-model').value
+            };
+
+            try {
+                const response = await DeviceAPI.create(data);
+
+                if (response.success) {
+                    this.deviceModal?.close();
+                    UI.showToast('Device registered successfully!', 'success');
+                    this.loadDevices();
+                } else {
+                    errorDiv.textContent = response.error || 'Failed to register device';
+                }
+            } catch (error) {
+                console.error('Device registration error:', error);
+                errorDiv.textContent = error.message || 'Network error. Please try again.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register Device';
+            }
+        });
+    },
+
+    /**
+     * Load devices from API
+     */
+    async loadDevices() {
+        try {
+            const response = await DeviceAPI.list();
+            if (response.success) {
+                this.renderDeviceList(response.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to load devices:', error);
+        }
+    },
+
+    /**
+     * Render device list
+     */
+    renderDeviceList(devices) {
+        const container = document.getElementById('device-list');
+        if (!container) return;
+
+        if (devices.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🦯</div>
+                    <h3>No devices yet</h3>
+                    <p>Add your first SmartPath Cane to get started.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = devices.map(device => `
+            <div class="device-item">
+                <div class="device-header">
+                    <div class="device-info">
+                        <span class="device-icon">🦯</span>
+                        <div class="device-details">
+                            <div class="device-name">${device.device_name || 'SmartPath Cane'}</div>
+                            <div class="device-id">${device.device_serial}</div>
+                        </div>
+                    </div>
+                    <div class="device-status">
+                        <div class="device-battery">
+                            <div class="battery-bar"><div class="battery-fill" style="width:${device.battery_level || 0}%"></div></div>
+                            <span>${device.battery_level || 0}%</span>
+                        </div>
+                        <span class="status-badge status-${device.status === 'active' ? 'online' : 'offline'}">${device.status}</span>
+                    </div>
+                </div>
+                <div class="device-actions device-actions-full">
+                    <button class="btn btn-outline btn-sm" onclick="Dashboard.trackDevice(${device.id})">📍 Track</button>
+                    <button class="btn btn-outline btn-sm" onclick="Dashboard.editDevice(${device.id})">⚙️ Settings</button>
+                    <button class="btn btn-outline btn-sm" onclick="Dashboard.viewHistory(${device.id})">📊 History</button>
+                </div>
+            </div>
+        `).join('');
     },
 
     /**
@@ -542,19 +664,17 @@ const Dashboard = {
      * Attach event listeners
      */
     attachListeners() {
-        // Tab navigation
-        document.querySelectorAll('.dashboard-nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.loadTab(item.dataset.tab);
-            });
-        });
+        // Use document-level event delegation for all dashboard interactions
+        document.removeEventListener('click', this.handleDocumentClick);
+        this.boundHandleDocumentClick = this.handleDocumentClick.bind(this);
+        document.addEventListener('click', this.boundHandleDocumentClick);
 
         // User menu
         const menuToggle = document.getElementById('user-menu-toggle');
         const menuDropdown = document.getElementById('user-menu-dropdown');
 
-        menuToggle?.addEventListener('click', () => {
+        menuToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
             menuDropdown?.classList.toggle('hidden');
         });
 
@@ -573,5 +693,47 @@ const Dashboard = {
         document.getElementById('btn-logout')?.addEventListener('click', () => {
             Auth.logout();
         });
+    },
+
+    /**
+     * Handle document clicks (event delegation)
+     */
+    handleDocumentClick(e) {
+        // Tab navigation - only handle if we're in the dashboard
+        const navItem = e.target.closest('.dashboard-nav-item');
+        if (navItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.loadTab(navItem.dataset.tab);
+            return;
+        }
+
+        // Add Device button
+        if (e.target.closest('#btn-add-device')) {
+            e.stopPropagation();
+            this.showAddDeviceModal();
+            return;
+        }
+    },
+
+    /**
+     * Track device
+     */
+    trackDevice(deviceId) {
+        this.loadTab('locations');
+    },
+
+    /**
+     * Edit device
+     */
+    editDevice(deviceId) {
+        UI.showToast('Device settings coming soon!', 'info');
+    },
+
+    /**
+     * View device history
+     */
+    viewHistory(deviceId) {
+        this.loadTab('locations');
     }
 };

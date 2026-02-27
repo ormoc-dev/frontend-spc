@@ -32,20 +32,29 @@ const Maps = {
         };
 
         const map = L.map(containerId, config).setView(
-            options.center || this.defaultLocation, 
+            options.center || this.defaultLocation,
             options.zoom || 15
         );
 
-        // Add satellite tile layer
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        // Add high-quality satellite tile layer (retina support)
+        const isRetina = window.devicePixelRatio > 1;
+        const tileUrl = isRetina
+            ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+        L.tileLayer(tileUrl, {
             attribution: 'Tiles &copy; Esri',
-            maxZoom: 19
+            maxZoom: 19,
+            maxNativeZoom: 18,
+            detectRetina: true
         }).addTo(map);
 
-        // Add labels layer
+        // Add labels layer with retina support
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
-            opacity: 0.7
+            maxNativeZoom: 18,
+            opacity: 0.8,
+            detectRetina: true
         }).addTo(map);
 
         this.instances[containerId] = map;
@@ -60,11 +69,11 @@ const Maps = {
         return L.divIcon({
             className: 'custom-marker',
             html: `
-                <div class="marker-pin" style="width:${size}px;height:${size}px;font-size:${size/2}px">🦯</div>
+                <div class="marker-pin" style="width:${size}px;height:${size}px;font-size:${size / 2}px">🦯</div>
                 ${options.pulse !== false ? '<div class="marker-pulse"></div>' : ''}
             `,
             iconSize: [size, size],
-            iconAnchor: [size/2, size/2]
+            iconAnchor: [size / 2, size / 2]
         });
     },
 

@@ -166,7 +166,7 @@ const Dashboard = {
                     </div>
                 </div>
                 <div class="stat-card">
-                    <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
+                    <span class="coming-soon-badge coming-soon-top">Coming Soon</span>
                     <div class="stat-icon stat-icon-warning">🚨</div>
                     <div class="stat-content">
                         <div class="stat-value">2</div>
@@ -174,7 +174,7 @@ const Dashboard = {
                     </div>
                 </div>
                 <div class="stat-card">
-                    <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
+                    <span class="coming-soon-badge coming-soon-top">Coming Soon</span>
                     <div class="stat-icon stat-icon-info">🔋</div>
                     <div class="stat-content">
                         <div class="stat-value">85%</div>
@@ -213,7 +213,7 @@ const Dashboard = {
                             <div class="alert-item alert-item-danger">
                                 <span>🚨</span>
                                 <div class="alert-content">
-                                  <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
+                                  <span class="coming-soon-badge coming-soon-top">Coming Soon</span>
                                     <div class="alert-title">SOS Button Pressed</div>
                                     <div class="alert-time">5 min ago</div>
                                 </div>
@@ -221,7 +221,7 @@ const Dashboard = {
                             <div class="alert-item alert-item-warning">
                                 <span>🔋</span>
                                 <div class="alert-content">
-                                  <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
+                                  <span class="coming-soon-badge coming-soon-top">Coming Soon</span>
                                     <div class="alert-title">Low Battery</div>
                                     <div class="alert-time">1 hr ago</div>
                                 </div>
@@ -471,7 +471,7 @@ const Dashboard = {
             <div class="dashboard-card">
                 <div class="dashboard-card-header">
                     <h3 class="dashboard-card-title">📊 Movement History</h3>
-                    <span class="coming-soon-badge coming-soon-badge-soon">Comming Soon</span>
+                    <span class="coming-soon-badge coming-soon-badge-soon">Coming Soon</span>
                 </div>
                 <div class="dashboard-card-body">
                     <div class="full-map" id="locations-map" style="opacity: 0.6;"></div>

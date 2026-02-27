@@ -68,22 +68,7 @@ const Maps = {
             className: 'custom-marker',
             html: `
                 <div class="marker-container" style="position:relative;width:${size}px;height:${size}px;">
-                    <div class="marker-arrow" style="
-                        position:absolute;
-                        top:50%;
-                        left:50%;
-                        width:0;
-                        height:0;
-                        margin-left:-4px;
-                        margin-top:-${size / 2 + 6}px;
-                        border-left:4px solid transparent;
-                        border-right:4px solid transparent;
-                        border-bottom:10px solid #dc2626;
-                        transform:rotate(${heading}deg);
-                        transform-origin:50% ${size / 2 + 6}px;
-                        filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-                        z-index:10;
-                    "></div>
+                  
                     <div class="marker-pin" style="
                         width:${size}px;
                         height:${size}px;

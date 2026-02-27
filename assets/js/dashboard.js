@@ -102,6 +102,11 @@ const Dashboard = {
      * Load tab content
      */
     loadTab(tab) {
+        // Stop live location refresh when leaving locations tab
+        if (this.currentTab === 'locations' && tab !== 'locations') {
+            this.stopLiveLocationRefresh();
+        }
+
         this.currentTab = tab;
         const container = document.getElementById('dashboard-content');
         const user = Auth.getUser();
@@ -663,7 +668,66 @@ const Dashboard = {
 
             // Fetch devices with live locations
             this.fetchLiveDevices();
+
+            // Start auto-refresh every 1 second for real-time tracking
+            this.startLiveLocationRefresh();
         }, 100);
+    },
+
+    /**
+     * Start auto-refreshing live location every 1 second
+     */
+    startLiveLocationRefresh() {
+        // Clear any existing interval
+        if (this.liveLocationInterval) {
+            clearInterval(this.liveLocationInterval);
+        }
+
+        // Refresh every 1 second
+        this.liveLocationInterval = setInterval(() => {
+            const selector = document.getElementById('live-device-selector');
+            if (selector && selector.value) {
+                // Refresh the currently selected device location
+                this.refreshCurrentDeviceLocation(selector.value);
+            }
+        }, 1000);
+    },
+
+    /**
+     * Stop live location auto-refresh
+     */
+    stopLiveLocationRefresh() {
+        if (this.liveLocationInterval) {
+            clearInterval(this.liveLocationInterval);
+            this.liveLocationInterval = null;
+        }
+    },
+
+    /**
+     * Refresh location for current device
+     */
+    async refreshCurrentDeviceLocation(deviceSerial) {
+        try {
+            const url = `${CONFIG.API_URL}/api/cane/location/${deviceSerial}`;
+            const response = await fetch(url);
+
+            if (!response.ok) return;
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                // Update the map with new location
+                this.updateLiveLocationMap(result.data);
+
+                // Update the last updated time
+                const location = result.data.location;
+                if (location && location.recorded_at) {
+                    document.getElementById('live-last-updated').textContent = new Date(location.recorded_at).toLocaleString();
+                }
+            }
+        } catch (error) {
+            // Silent fail - don't spam console with errors
+        }
     },
 
     /**

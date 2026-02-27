@@ -24,7 +24,125 @@ const Dashboard = {
         `;
 
         this.attachListeners();
-        this.loadTab('overview');
+        // Load saved tab or default to overview
+        const savedTab = localStorage.getItem('dashboard_current_tab') || 'overview';
+        this.loadTab(savedTab);
+
+        // Start checking for SOS alerts
+        this.startSOSAlertCheck();
+    },
+
+    /**
+     * Play SOS alert sound using alarm.mp3
+     */
+    playSOSAlertSound() {
+        try {
+            // Use the provided alarm.mp3 file
+            const audio = new Audio('assets/aduio/alarm.mp3');
+            audio.volume = 0.7;
+            audio.play().catch(e => {
+                console.error('Audio play failed:', e);
+                // Fallback to generated sound if mp3 fails
+                this.playFallbackSOSAlertSound();
+            });
+        } catch (e) {
+            console.error('SOS sound play failed:', e);
+            this.playFallbackSOSAlertSound();
+        }
+    },
+
+    /**
+     * Fallback SOS alert sound (generated)
+     */
+    playFallbackSOSAlertSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 1);
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1);
+        } catch (e) {
+            console.error('Fallback sound failed:', e);
+        }
+    },
+
+    /**
+     * Check for new SOS alerts
+     */
+    async checkSOSAlerts() {
+        try {
+            // Use API client which handles authentication
+            const result = await API.get('/api/alerts');
+            if (!result.success || !result.data) return;
+
+            // Check for new SOS alerts
+            const sosAlerts = result.data.filter(alert => alert.alert_type === 'SOS');
+
+            if (sosAlerts.length > 0) {
+                const latestAlert = sosAlerts[0];
+                const alertId = latestAlert.id;
+
+                // Check if this is a new alert
+                if (this.lastAlertId && alertId !== this.lastAlertId) {
+                    // New SOS alert received!
+                    this.playSOSAlertSound();
+                    UI.showToast(`🚨 NEW SOS ALERT from ${latestAlert.device_serial || 'Device'}!`, 'error');
+
+                    // Show browser notification if permitted
+                    if (Notification.permission === 'granted') {
+                        new Notification('SmartPath Cane - SOS Alert', {
+                            body: `Emergency alert from ${latestAlert.device_serial || 'Device'}!`,
+                            icon: '🚨',
+                            requireInteraction: true
+                        });
+                    }
+                }
+
+                this.lastAlertId = alertId;
+            }
+        } catch (error) {
+            // Silent fail
+        }
+    },
+
+    /**
+     * Start periodic SOS alert checking
+     */
+    startSOSAlertCheck() {
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Check immediately
+        this.checkSOSAlerts();
+
+        // Check every 5 seconds
+        this.sosCheckInterval = setInterval(() => {
+            this.checkSOSAlerts();
+        }, 5000);
+    },
+
+    /**
+     * Stop SOS alert checking
+     */
+    stopSOSAlertCheck() {
+        if (this.sosCheckInterval) {
+            clearInterval(this.sosCheckInterval);
+            this.sosCheckInterval = null;
+        }
     },
 
     /**
@@ -108,6 +226,8 @@ const Dashboard = {
         }
 
         this.currentTab = tab;
+        // Save current tab to localStorage
+        localStorage.setItem('dashboard_current_tab', tab);
         const container = document.getElementById('dashboard-content');
         const user = Auth.getUser();
 
@@ -332,10 +452,8 @@ const Dashboard = {
                     const message = response.message || 'Device registered successfully!';
                     UI.showToast(message, 'success');
                     this.loadDevices();
-                    // If device was claimed, refresh locations tab
-                    if (message.includes('claimed')) {
-                        setTimeout(() => this.loadTab('locations'), 500);
-                    }
+                    // Stay on overview tab, just refresh the devices list
+                    // User can manually go to locations tab if they want
                 } else {
                     errorDiv.textContent = response.error || 'Failed to register device';
                 }
@@ -646,8 +764,47 @@ const Dashboard = {
     initOverview() {
         setTimeout(() => {
             Maps.initMiniMap('overview-map');
-            Maps.addMarker('overview-map', Maps.defaultLocation, { pulse: false });
+
+            // Try to fetch and show device location
+            this.fetchDeviceForOverview();
         }, 100);
+    },
+
+    /**
+     * Fetch device location for overview map
+     */
+    async fetchDeviceForOverview() {
+        try {
+            const url = `${CONFIG.API_URL}/api/cane/devices`;
+            const response = await fetch(url);
+
+            if (!response.ok) return;
+
+            const result = await response.json();
+
+            if (result.success && result.data && result.data.length > 0) {
+                // Find device with live location
+                const deviceWithLocation = result.data.find(d => d.location);
+
+                if (deviceWithLocation && deviceWithLocation.location) {
+                    const lat = parseFloat(deviceWithLocation.location.latitude);
+                    const lng = parseFloat(deviceWithLocation.location.longitude);
+
+                    // Show device location on overview map
+                    Maps.setView('overview-map', [lat, lng], 15);
+                    Maps.addMarker('overview-map', [lat, lng], { pulse: false });
+                } else {
+                    // No location yet, show default
+                    Maps.addMarker('overview-map', Maps.defaultLocation, { pulse: false });
+                }
+            } else {
+                // No devices, show default
+                Maps.addMarker('overview-map', Maps.defaultLocation, { pulse: false });
+            }
+        } catch (error) {
+            // Silent fail - show default location
+            Maps.addMarker('overview-map', Maps.defaultLocation, { pulse: false });
+        }
     },
 
     /**

@@ -156,54 +156,56 @@ const Maps = {
      * Create custom location pin marker with cane emoji inside
      */
     createCaneIcon(options = {}) {
-        const size = options.size || 36;
-        const heading = options.heading || 0;
+        const size = options.size || 12;
 
         return L.divIcon({
-            className: 'custom-marker-pin',
+            className: 'simple-dot-marker',
             html: `
-                <div style="position:relative;width:${size}px;height:${size + 10}px;">
-                    <!-- Directional arrow at top -->
-                 
-                    <!-- Location pin shape -->
+                <div style="position:relative;width:${size * 4}px;height:${size * 4}px;">
+                    <!-- Outer wave ring -->
                     <div style="
                         position:absolute;
-                        top:6px;
-                        left:0;
+                        top:50%;
+                        left:50%;
+                        transform:translate(-50%,-50%);
+                        width:${size * 4}px;
+                        height:${size * 4}px;
+                        border:2px solid rgba(37,99,235,0.3);
+                        border-radius:50%;
+                        animation:wave-pulse 2s ease-out infinite;
+                        z-index:1;
+                    "></div>
+                    <!-- Middle wave ring -->
+                    <div style="
+                        position:absolute;
+                        top:50%;
+                        left:50%;
+                        transform:translate(-50%,-50%);
+                        width:${size * 2.5}px;
+                        height:${size * 2.5}px;
+                        border:2px solid rgba(37,99,235,0.5);
+                        border-radius:50%;
+                        animation:wave-pulse 2s ease-out infinite 0.5s;
+                        z-index:2;
+                    "></div>
+                    <!-- Center dot -->
+                    <div style="
+                        position:absolute;
+                        top:50%;
+                        left:50%;
+                        transform:translate(-50%,-50%);
                         width:${size}px;
                         height:${size}px;
-                        background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-                        border-radius:50% 50% 50% 0;
-                        transform:rotate(-45deg);
-                        box-shadow:0 2px 6px rgba(0,0,0,0.4);
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        z-index:5;
-                    ">
-                        <!-- Cane emoji inside -->
-                        <div style="
-                            transform:rotate(45deg);
-                            font-size:${size * 0.5}px;
-                            line-height:1;
-                        ">🦯</div>
-                    </div>
-                    <!-- Pin point shadow -->
-                    <div style="
-                        position:absolute;
-                        bottom:0;
-                        left:50%;
-                        transform:translateX(-50%);
-                        width:8px;
-                        height:4px;
-                        background:rgba(0,0,0,0.3);
+                        background:#2563eb;
+                        border:2px solid white;
                         border-radius:50%;
-                        z-index:1;
+                        box-shadow:0 2px 4px rgba(0,0,0,0.3);
+                        z-index:3;
                     "></div>
                 </div>
             `,
-            iconSize: [size, size + 10],
-            iconAnchor: [size / 2, size + 5]
+            iconSize: [size * 4, size * 4],
+            iconAnchor: [size * 2, size * 2]
         });
     },
 

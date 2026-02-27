@@ -28,7 +28,8 @@ const Dashboard = {
         const savedTab = localStorage.getItem('dashboard_current_tab') || 'overview';
         this.loadTab(savedTab);
 
-        // Start checking for SOS alerts
+        // Initialize last alert ID and start checking for alerts
+        this.lastAlertId = null;
         this.startSOSAlertCheck();
     },
 
@@ -38,7 +39,7 @@ const Dashboard = {
     playSOSAlertSound() {
         try {
             // Use the provided alarm.mp3 file
-            const audio = new Audio('assets/aduio/alarm.mp3');
+            const audio = new Audio('assets/audio/alarm.mp3');
             audio.volume = 0.7;
             audio.play().catch(e => {
                 console.error('Audio play failed:', e);
@@ -87,23 +88,33 @@ const Dashboard = {
             const result = await API.get('/api/alerts');
             if (!result.success || !result.data) return;
 
-            // Check for new SOS alerts
-            const sosAlerts = result.data.filter(alert => alert.alert_type === 'SOS');
+            // Check for new alerts of any type
+            const alerts = result.data;
 
-            if (sosAlerts.length > 0) {
-                const latestAlert = sosAlerts[0];
+            if (alerts.length > 0) {
+                const latestAlert = alerts[0];
                 const alertId = latestAlert.id;
 
                 // Check if this is a new alert
                 if (this.lastAlertId && alertId !== this.lastAlertId) {
-                    // New SOS alert received!
-                    this.playSOSAlertSound();
-                    UI.showToast(`🚨 NEW SOS ALERT from ${latestAlert.device_serial || 'Device'}!`, 'error');
+                    // New alert received - play sound if it's an emergency type
+                    if (latestAlert.alert_type === 'sos' || latestAlert.alert_type === 'fall') {
+                        this.playSOSAlertSound();
+                    }
+
+                    // Show toast notification
+                    const alertTitle = latestAlert.alert_type === 'sos' ? 'SOS ALERT' :
+                        latestAlert.alert_type === 'fall' ? 'FALL ALERT' :
+                            latestAlert.alert_type.toUpperCase();
+                    UI.showToast(`🚨 NEW ${alertTitle} from ${latestAlert.device_serial || 'Device'}!`, 'error');
 
                     // Show browser notification if permitted
                     if (Notification.permission === 'granted') {
-                        new Notification('SmartPath Cane - SOS Alert', {
-                            body: `Emergency alert from ${latestAlert.device_serial || 'Device'}!`,
+                        const alertMessage = latestAlert.alert_type === 'sos' ? 'Emergency alert' :
+                            latestAlert.alert_type === 'fall' ? 'Fall detection' :
+                                'New alert';
+                        new Notification('SmartPath Cane - Alert', {
+                            body: `${alertMessage} from ${latestAlert.device_serial || 'Device'}!`,
                             icon: '🚨',
                             requireInteraction: true
                         });
@@ -252,6 +263,7 @@ const Dashboard = {
                 break;
             case 'alerts':
                 container.innerHTML = this.renderAlerts();
+                this.initAlertsTab();
                 break;
             case 'geofences':
                 container.innerHTML = this.renderGeofences();
@@ -635,41 +647,221 @@ const Dashboard = {
                 <div>
                     <h1 class="dashboard-title">Alerts</h1>
                 </div>
-                <select class="form-select form-select-sm">
-                    <option>All Alerts</option>
-                    <option>Unresolved</option>
+                <select class="form-select form-select-sm" id="alert-filter">
+                    <option value="all">All Alerts</option>
+                    <option value="unresolved">Unresolved</option>
+                    <option value="sos">SOS Alerts</option>
                 </select>
             </div>
 
             <div class="dashboard-card">
                 <div class="dashboard-card-body">
-                    <div class="alert-list">
-                        <div class="alert-item alert-item-detailed alert-item-danger">
-                            <div class="alert-header">
-                                <div class="alert-badge alert-badge-danger">SOS</div>
-                                <div class="alert-meta">
-                                    <span>SPC-001</span>
-                                    <span class="alert-dot">•</span>
-                                    <span>2 min ago</span>
-                                </div>
-                            </div>
-                            <div class="alert-content">
-                                <h4 class="alert-title">Emergency SOS Button Pressed</h4>
-                                <p class="alert-description">User triggered emergency alert from device</p>
-                                <div class="alert-location">
-                                    <span>📍</span>
-                                    <span>Ormoc City, Leyte</span>
-                                </div>
-                            </div>
-                            <div class="alert-actions">
-                                <button class="btn btn-primary btn-sm">✓ Resolve</button>
-                                <button class="btn btn-outline btn-sm">📍 View Location</button>
-                            </div>
+                    <div class="alert-list" id="alert-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">🚨</div>
+                            <h3>No alerts yet</h3>
+                            <p>Waiting for alerts from connected devices.</p>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * Load alerts from API
+     */
+    async loadAlerts(filter = 'all') {
+        try {
+            const response = await AlertAPI.list();
+
+            if (response.success) {
+                let alerts = response.data || [];
+
+                // Apply filter
+                switch (filter) {
+                    case 'unresolved':
+                        alerts = alerts.filter(alert => alert.status === 'pending');
+                        break;
+                    case 'sos':
+                        alerts = alerts.filter(alert => alert.alert_type === 'sos');
+                        break;
+                }
+
+                // Sort by created_at (newest first)
+                alerts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                this.renderAlertList(alerts);
+            }
+        } catch (error) {
+            console.error('Failed to load alerts:', error);
+            UI.showToast('Failed to load alerts', 'error');
+        }
+    },
+
+    /**
+     * Render alert list
+     */
+    renderAlertList(alerts) {
+        const container = document.getElementById('alert-list');
+        if (!container) return;
+
+        if (alerts.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🚨</div>
+                    <h3>No alerts yet</h3>
+                    <p>Waiting for alerts from connected devices.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = alerts.map(alert => {
+            const alertType = alert.alert_type;
+            const alertTime = new Date(alert.created_at).toLocaleString();
+            const badgeClass = alertType === 'sos' ? 'alert-badge-danger' :
+                alertType === 'fall' ? 'alert-badge-warning' :
+                    'alert-badge-info';
+            const icon = alertType === 'sos' ? '🚨' :
+                alertType === 'fall' ? '摔倒' :
+                    alertType === 'battery_low' ? '🔋' :
+                        '📍';
+
+            return `
+                <div class="alert-item alert-item-detailed alert-item-${alertType === 'sos' ? 'danger' : alertType === 'fall' ? 'warning' : 'info'}">
+                    <div class="alert-header">
+                        <div class="alert-badge ${badgeClass}">${alertType.toUpperCase()}</div>
+                        <div class="alert-meta">
+                            <span>${alert.device_serial || 'Unknown Device'}</span>
+                            <span class="alert-dot">•</span>
+                            <span>${alertTime}</span>
+                        </div>
+                    </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">${this.getAlertTitle(alert)}</h4>
+                        <p class="alert-description">${alert.message || this.getAlertDescription(alert)}</p>
+                        ${alert.latitude && alert.longitude ? `
+                        <div class="alert-location">
+                            <span>📍</span>
+                            <span>${this.getLocationAddress(alert.latitude, alert.longitude)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="alert-actions">
+                        ${alert.status === 'pending' ? `
+                        <button class="btn btn-primary btn-sm" onclick="Dashboard.resolveAlert(${alert.id})">✓ Resolve</button>
+                        ` : ''}
+                        ${alert.latitude && alert.longitude ? `
+                        <button class="btn btn-outline btn-sm" onclick="Dashboard.viewAlertLocation(${alert.id}, ${alert.latitude}, ${alert.longitude})">📍 View Location</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    /**
+     * Get alert title
+     */
+    getAlertTitle(alert) {
+        switch (alert.alert_type) {
+            case 'sos':
+                return 'Emergency SOS Button Pressed';
+            case 'fall':
+                return 'Fall Detection Alert';
+            case 'battery_low':
+                return 'Low Battery Alert';
+            case 'geofence_exit':
+                return 'Geofence Exit Alert';
+            default:
+                return 'New Alert';
+        }
+    },
+
+    /**
+     * Get alert description
+     */
+    getAlertDescription(alert) {
+        switch (alert.alert_type) {
+            case 'sos':
+                return 'User triggered emergency alert from device';
+            case 'fall':
+                return 'Potential fall detected by device';
+            case 'battery_low':
+                return 'Device battery level is critically low';
+            case 'geofence_exit':
+                return 'Device exited from designated safe zone';
+            default:
+                return 'New alert received from device';
+        }
+    },
+
+    /**
+     * Get location address
+     */
+    async getLocationAddress(lat, lng) {
+        try {
+            // Simple coordinate display if reverse geocoding isn't available
+            return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        } catch (error) {
+            return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+    },
+
+    /**
+     * Resolve alert
+     */
+    async resolveAlert(alertId) {
+        try {
+            const response = await AlertAPI.resolve(alertId);
+
+            if (response.success) {
+                UI.showToast('Alert resolved', 'success');
+                // Reload alerts
+                const filterSelect = document.getElementById('alert-filter');
+                this.loadAlerts(filterSelect?.value || 'all');
+            }
+        } catch (error) {
+            console.error('Failed to resolve alert:', error);
+            UI.showToast('Failed to resolve alert', 'error');
+        }
+    },
+
+    /**
+     * View alert location
+     */
+    viewAlertLocation(alertId, lat, lng) {
+        // Navigate to locations tab and center map on the alert location
+        this.loadTab('locations');
+
+        // Center the map on the alert location
+        setTimeout(() => {
+            try {
+                Maps.setView('live-location-map', [lat, lng], 15);
+                Maps.addMarker('live-location-map', [lat, lng], {
+                    popup: `<b>Alert Location</b><br>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`
+                });
+            } catch (error) {
+                console.error('Failed to view alert location:', error);
+            }
+        }, 500);
+    },
+
+    /**
+     * Initialize alerts tab
+     */
+    initAlertsTab() {
+        // Load alerts
+        this.loadAlerts();
+
+        // Add event listener for filter changes
+        const filterSelect = document.getElementById('alert-filter');
+        if (filterSelect) {
+            filterSelect.addEventListener('change', (e) => {
+                this.loadAlerts(e.target.value);
+            });
+        }
     },
 
     /**

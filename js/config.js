@@ -3,8 +3,8 @@ const CONFIG = {
     ENV: window.location.hostname === 'localhost' ? 'development' : 'production',
 
     API_URL: window.location.hostname === 'localhost'
-        ? 'http://localhost/smartpathcane/backend-spc/public/index.php'
-        : 'https://ormoc.ejeepdev.site/backend-spc/public/index.php',
+        ? 'http://localhost/smartpathcane/backend-spc/public'
+        : 'https://floralwhite-raccoon-333018.hostingersite.com/backend-spc/public',
 
 
     APP_NAME: 'SmartPath Cane',

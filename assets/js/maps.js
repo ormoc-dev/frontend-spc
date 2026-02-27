@@ -116,6 +116,16 @@ const Maps = {
     },
 
     /**
+     * Set map view to specific location
+     */
+    setView(containerId, position, zoom) {
+        const map = this.instances[containerId];
+        if (map) {
+            map.setView(position, zoom);
+        }
+    },
+
+    /**
      * Invalidate size (call after container becomes visible)
      */
     refresh(containerId) {

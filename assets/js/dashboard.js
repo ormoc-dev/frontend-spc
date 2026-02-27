@@ -324,14 +324,25 @@ const Dashboard = {
 
                 if (response.success) {
                     this.deviceModal?.close();
-                    UI.showToast('Device registered successfully!', 'success');
+                    const message = response.message || 'Device registered successfully!';
+                    UI.showToast(message, 'success');
                     this.loadDevices();
+                    // If device was claimed, refresh locations tab
+                    if (message.includes('claimed')) {
+                        setTimeout(() => this.loadTab('locations'), 500);
+                    }
                 } else {
                     errorDiv.textContent = response.error || 'Failed to register device';
                 }
             } catch (error) {
                 console.error('Device registration error:', error);
-                errorDiv.textContent = error.message || 'Network error. Please try again.';
+                if (error.message?.includes('already registered to your account')) {
+                    errorDiv.innerHTML = `<strong>Device already in your account!</strong><br><a href="#" onclick="Dashboard.loadTab('locations'); return false;">View in Locations tab</a>`;
+                } else if (error.message?.includes('already registered')) {
+                    errorDiv.innerHTML = `<strong>Device already registered!</strong><br>This device belongs to another user.`;
+                } else {
+                    errorDiv.textContent = error.message || 'Network error. Please try again.';
+                }
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Register Device';
@@ -417,23 +428,29 @@ const Dashboard = {
                     <span class="coming-soon-badge">Live</span>
                 </div>
                 <div class="dashboard-card-body">
+                    <div class="form-group" style="margin-bottom: var(--space-4);">
+                        <label class="form-label">Select Device</label>
+                        <select class="form-select" id="live-device-selector">
+                            <option value="">Loading devices...</option>
+                        </select>
+                    </div>
                     <div class="full-map" id="live-location-map"></div>
-                    <div class="location-info" style="margin-top: var(--space-4);">
+                    <div class="location-info" id="live-location-info" style="margin-top: var(--space-4);">
                         <div class="location-item">
                             <span class="location-label">Device</span>
-                            <span class="location-value">SPC-001</span>
+                            <span class="location-value" id="live-device-name">-</span>
                         </div>
                         <div class="location-item">
-                            <span class="location-label">Address</span>
-                            <span class="location-value">Ormoc City, Leyte</span>
+                            <span class="location-label">Coordinates</span>
+                            <span class="location-value" id="live-coordinates">-</span>
                         </div>
                         <div class="location-item">
                             <span class="location-label">Last Updated</span>
-                            <span class="location-value">Just now</span>
+                            <span class="location-value" id="live-last-updated">-</span>
                         </div>
                         <div class="location-item">
                             <span class="location-label">Accuracy</span>
-                            <span class="location-value">±5 meters</span>
+                            <span class="location-value" id="live-accuracy">-</span>
                         </div>
                     </div>
                 </div>
@@ -635,11 +652,7 @@ const Dashboard = {
         setTimeout(() => {
             // Initialize live location map
             const liveMap = Maps.init('live-location-map', { zoom: 16 });
-            if (liveMap) {
-                Maps.addMarker('live-location-map', Maps.defaultLocation, {
-                    popup: '<b>Current Location</b><br>Device: SPC-001'
-                });
-            }
+
             // Initialize history map
             const historyMap = Maps.init('locations-map', { zoom: 14 });
             if (historyMap) {
@@ -647,7 +660,103 @@ const Dashboard = {
                     popup: '<b>Last Known Location</b><br>Device: SPC-001'
                 });
             }
+
+            // Fetch devices with live locations
+            this.fetchLiveDevices();
         }, 100);
+    },
+
+    /**
+     * Fetch devices with live locations
+     */
+    async fetchLiveDevices() {
+        try {
+            const url = `${CONFIG.API_URL}/api/cane/devices`;
+            console.log('Fetching devices from:', url);
+            const response = await fetch(url);
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text.substring(0, 200));
+                return;
+            }
+
+            const result = await response.json();
+            console.log('Devices response:', result);
+
+            if (result.success && result.data) {
+                this.populateDeviceSelector(result.data);
+            } else {
+                console.error('Failed to fetch devices:', result.error || result.message || 'Unknown error', result);
+            }
+        } catch (error) {
+            console.error('Error fetching devices:', error.message || error);
+        }
+    },
+
+    /**
+     * Populate device selector dropdown
+     */
+    populateDeviceSelector(devices) {
+        const selector = document.getElementById('live-device-selector');
+        if (!selector) return;
+
+        // Filter devices that have location data
+        const devicesWithLocation = devices.filter(d => d.has_location);
+
+        if (devicesWithLocation.length === 0) {
+            selector.innerHTML = '<option value="">No devices with live location</option>';
+            return;
+        }
+
+        selector.innerHTML = devicesWithLocation.map(d =>
+            `<option value="${d.device.device_serial}" data-device='${JSON.stringify(d)}'>
+                ${d.device.device_name || d.device.device_serial} ${d.has_location ? '📍' : ''}
+            </option>`
+        ).join('');
+
+        // Add change event listener
+        selector.addEventListener('change', (e) => {
+            const selectedOption = e.target.selectedOptions[0];
+            if (selectedOption && selectedOption.dataset.device) {
+                const deviceData = JSON.parse(selectedOption.dataset.device);
+                this.updateLiveLocationMap(deviceData);
+            }
+        });
+
+        // Show first device location
+        if (devicesWithLocation.length > 0) {
+            this.updateLiveLocationMap(devicesWithLocation[0]);
+        }
+    },
+
+    /**
+     * Update live location map with device data
+     */
+    updateLiveLocationMap(deviceData) {
+        const { device, location } = deviceData;
+
+        if (!location) {
+            console.log('No location data for device:', device.device_serial);
+            return;
+        }
+
+        const lat = parseFloat(location.latitude);
+        const lng = parseFloat(location.longitude);
+
+        // Update map
+        Maps.setView('live-location-map', [lat, lng], 16);
+        Maps.addMarker('live-location-map', [lat, lng], {
+            popup: `<b>${device.device_name || device.device_serial}</b><br>Live Location`
+        });
+
+        // Update info panel
+        document.getElementById('live-device-name').textContent = device.device_name || device.device_serial;
+        document.getElementById('live-coordinates').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        document.getElementById('live-last-updated').textContent = new Date(location.recorded_at).toLocaleString();
+        document.getElementById('live-accuracy').textContent = location.accuracy ? `±${Math.round(location.accuracy)}m` : 'Unknown';
     },
 
     /**

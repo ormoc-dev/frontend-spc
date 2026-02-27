@@ -54,48 +54,156 @@ const Maps = {
         }).addTo(map);
 
         this.instances[containerId] = map;
+
+        // Add fullscreen control
+        this.addFullscreenControl(containerId);
+
         return map;
     },
 
     /**
-     * Create custom cane marker icon with small directional pointer
+     * Add fullscreen button to map
+     */
+    addFullscreenControl(mapId) {
+        const mapContainer = document.getElementById(mapId);
+        if (!mapContainer) return;
+
+        // Create fullscreen button
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'map-fullscreen-btn';
+        fullscreenBtn.innerHTML = '⛶';
+        fullscreenBtn.title = 'Toggle Fullscreen';
+        fullscreenBtn.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border: none;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        `;
+
+        fullscreenBtn.addEventListener('mouseenter', () => {
+            fullscreenBtn.style.background = '#f3f4f6';
+        });
+        fullscreenBtn.addEventListener('mouseleave', () => {
+            fullscreenBtn.style.background = 'white';
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            this.toggleFullscreen(mapId);
+        });
+
+        // Position the map container relatively if not already
+        if (getComputedStyle(mapContainer).position === 'static') {
+            mapContainer.style.position = 'relative';
+        }
+        mapContainer.appendChild(fullscreenBtn);
+    },
+
+    /**
+     * Toggle fullscreen for map
+     */
+    toggleFullscreen(mapId) {
+        const mapContainer = document.getElementById(mapId);
+        if (!mapContainer) return;
+
+        if (!document.fullscreenElement) {
+            mapContainer.requestFullscreen().catch(err => {
+                console.error('Fullscreen error:', err);
+                // Fallback: maximize the container
+                mapContainer.style.position = 'fixed';
+                mapContainer.style.top = '0';
+                mapContainer.style.left = '0';
+                mapContainer.style.width = '100vw';
+                mapContainer.style.height = '100vh';
+                mapContainer.style.zIndex = '9999';
+                mapContainer.dataset.isFullscreen = 'true';
+            });
+        } else {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+            // Remove fallback styles
+            if (mapContainer.dataset.isFullscreen) {
+                mapContainer.style.position = '';
+                mapContainer.style.top = '';
+                mapContainer.style.left = '';
+                mapContainer.style.width = '';
+                mapContainer.style.height = '';
+                mapContainer.style.zIndex = '';
+                delete mapContainer.dataset.isFullscreen;
+            }
+        }
+
+        // Invalidate map size after transition
+        setTimeout(() => {
+            const map = this.instances[mapId];
+            if (map) map.invalidateSize();
+        }, 300);
+    },
+
+    /**
+     * Create custom location pin marker with cane emoji inside
      */
     createCaneIcon(options = {}) {
-        const size = options.size || 24;
+        const size = options.size || 36;
         const heading = options.heading || 0;
 
         return L.divIcon({
-            className: 'custom-marker-simple',
+            className: 'custom-marker-pin',
             html: `
-                <div style="position:relative;width:${size}px;height:${size}px;">
-                    <!-- Small directional dot/pointer -->
+                <div style="position:relative;width:${size}px;height:${size + 10}px;">
+                    <!-- Directional arrow at top -->
+                 
+                    <!-- Location pin shape -->
                     <div style="
                         position:absolute;
-                        top:50%;
-                        left:50%;
-                        width:6px;
-                        height:6px;
-                        background:#dc2626;
-                        border-radius:50%;
-                        margin-left:-3px;
-                        margin-top:-${size / 2 + 4}px;
-                        transform:rotate(${heading}deg);
-                        transform-origin:50% ${size / 2 + 4}px;
-                        box-shadow:0 1px 2px rgba(0,0,0,0.5);
-                        z-index:10;
-                    "></div>
-                    <!-- Cane emoji -->
-                    <div style="
-                        font-size:${size}px;
-                        line-height:1;
-                        filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-                        position:relative;
+                        top:6px;
+                        left:0;
+                        width:${size}px;
+                        height:${size}px;
+                        background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                        border-radius:50% 50% 50% 0;
+                        transform:rotate(-45deg);
+                        box-shadow:0 2px 6px rgba(0,0,0,0.4);
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
                         z-index:5;
-                    ">🦯</div>
+                    ">
+                        <!-- Cane emoji inside -->
+                        <div style="
+                            transform:rotate(45deg);
+                            font-size:${size * 0.5}px;
+                            line-height:1;
+                        ">🦯</div>
+                    </div>
+                    <!-- Pin point shadow -->
+                    <div style="
+                        position:absolute;
+                        bottom:0;
+                        left:50%;
+                        transform:translateX(-50%);
+                        width:8px;
+                        height:4px;
+                        background:rgba(0,0,0,0.3);
+                        border-radius:50%;
+                        z-index:1;
+                    "></div>
                 </div>
             `,
-            iconSize: [size, size + 8],
-            iconAnchor: [size / 2, size / 2]
+            iconSize: [size, size + 10],
+            iconAnchor: [size / 2, size + 5]
         });
     },
 

@@ -831,11 +831,29 @@ const Dashboard = {
             popup: `<b>${device.device_name || device.device_serial}</b><br>Heading: ${Math.round(heading)}°<br>Live Location`
         });
 
-        // Update info panel
+        // Update info panel with animation
+        const coordsEl = document.getElementById('live-coordinates');
+        const updatedEl = document.getElementById('live-last-updated');
+        const accuracyEl = document.getElementById('live-accuracy');
+
         document.getElementById('live-device-name').textContent = device.device_name || device.device_serial;
-        document.getElementById('live-coordinates').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        document.getElementById('live-last-updated').textContent = new Date(location.recorded_at).toLocaleString();
-        document.getElementById('live-accuracy').textContent = location.accuracy ? `±${Math.round(location.accuracy)}m` : 'Unknown';
+        coordsEl.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        updatedEl.textContent = new Date(location.recorded_at).toLocaleString();
+        accuracyEl.textContent = location.accuracy ? `±${Math.round(location.accuracy)}m` : 'Unknown';
+
+        // Add visual flash effect to show update
+        [coordsEl, updatedEl, accuracyEl].forEach(el => {
+            if (el) {
+                el.style.transition = 'background-color 0.2s';
+                el.style.backgroundColor = 'rgba(37, 99, 235, 0.2)';
+                setTimeout(() => {
+                    el.style.backgroundColor = 'transparent';
+                }, 200);
+            }
+        });
+
+        // Log update for debugging
+        console.log(`[${new Date().toLocaleTimeString()}] Location updated: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     },
 
     /**

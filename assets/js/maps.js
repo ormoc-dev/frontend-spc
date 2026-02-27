@@ -58,28 +58,21 @@ const Maps = {
     },
 
     /**
-     * Create custom cane marker icon with direction arrow
+     * Create custom cane marker icon (simple, no background)
      */
     createCaneIcon(options = {}) {
-        const size = options.size || 40;
-        const heading = options.heading || 0; // Direction in degrees (0-360)
+        const size = options.size || 24; // Smaller default size
 
         return L.divIcon({
-            className: 'custom-marker',
+            className: 'custom-marker-simple',
             html: `
-                <div class="marker-container" style="position:relative;width:${size}px;height:${size}px;">
-                  
-                    <div class="marker-pin" style="
-                        width:${size}px;
-                        height:${size}px;
-                        font-size:${size / 2}px;
-                        position:relative;
-                        z-index:5;
-                    ">🦯</div>
-                    ${options.pulse !== false ? '<div class="marker-pulse"></div>' : ''}
-                </div>
+                <div style="
+                    font-size:${size}px;
+                    line-height:1;
+                    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+                ">🦯</div>
             `,
-            iconSize: [size, size + 12],
+            iconSize: [size, size],
             iconAnchor: [size / 2, size / 2]
         });
     },

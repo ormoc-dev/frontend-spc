@@ -809,11 +809,26 @@ const Dashboard = {
 
         const lat = parseFloat(location.latitude);
         const lng = parseFloat(location.longitude);
+        const newPosition = [lat, lng];
 
-        // Update map
-        Maps.setView('live-location-map', [lat, lng], 16);
-        Maps.addMarker('live-location-map', [lat, lng], {
-            popup: `<b>${device.device_name || device.device_serial}</b><br>Live Location`
+        // Calculate heading from previous position
+        let heading = 0;
+        const deviceId = device.device_serial;
+
+        if (this.devicePositions && this.devicePositions[deviceId]) {
+            const prevPosition = this.devicePositions[deviceId];
+            heading = Maps.calculateHeading(prevPosition, newPosition);
+        }
+
+        // Store current position for next update
+        if (!this.devicePositions) this.devicePositions = {};
+        this.devicePositions[deviceId] = newPosition;
+
+        // Update map with directional marker
+        Maps.setView('live-location-map', newPosition, 16);
+        Maps.addMarker('live-location-map', newPosition, {
+            heading: heading,
+            popup: `<b>${device.device_name || device.device_serial}</b><br>Heading: ${Math.round(heading)}°<br>Live Location`
         });
 
         // Update info panel

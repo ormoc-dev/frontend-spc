@@ -229,7 +229,11 @@ const Dashboard = {
                 if (this.lastAlertId && alertId !== this.lastAlertId) {
                     // New alert received - play sound if it's an emergency type
                     if (latestAlert.alert_type === 'sos' || latestAlert.alert_type === 'fall') {
-                        await this.playSOSAlertSound();
+                        // Defer playing the sound to avoid autoplay restrictions
+                        // Schedule the sound to play after the current call stack clears
+                        setTimeout(() => {
+                            this.playSOSAlertSound();
+                        }, 0);
                     }
 
                     // Show toast notification
@@ -271,8 +275,8 @@ const Dashboard = {
         this.checkSOSAlerts();
 
         // Check every 5 seconds
-        this.sosCheckInterval = setInterval(async () => {
-            await this.checkSOSAlerts();
+        this.sosCheckInterval = setInterval(() => {
+            this.checkSOSAlerts();
         }, 5000);
     },
 

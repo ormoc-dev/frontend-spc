@@ -58,21 +58,43 @@ const Maps = {
     },
 
     /**
-     * Create custom cane marker icon (simple, no background)
+     * Create custom cane marker icon with small directional pointer
      */
     createCaneIcon(options = {}) {
-        const size = options.size || 24; // Smaller default size
+        const size = options.size || 24;
+        const heading = options.heading || 0;
 
         return L.divIcon({
             className: 'custom-marker-simple',
             html: `
-                <div style="
-                    font-size:${size}px;
-                    line-height:1;
-                    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-                ">🦯</div>
+                <div style="position:relative;width:${size}px;height:${size}px;">
+                    <!-- Small directional dot/pointer -->
+                    <div style="
+                        position:absolute;
+                        top:50%;
+                        left:50%;
+                        width:6px;
+                        height:6px;
+                        background:#dc2626;
+                        border-radius:50%;
+                        margin-left:-3px;
+                        margin-top:-${size / 2 + 4}px;
+                        transform:rotate(${heading}deg);
+                        transform-origin:50% ${size / 2 + 4}px;
+                        box-shadow:0 1px 2px rgba(0,0,0,0.5);
+                        z-index:10;
+                    "></div>
+                    <!-- Cane emoji -->
+                    <div style="
+                        font-size:${size}px;
+                        line-height:1;
+                        filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+                        position:relative;
+                        z-index:5;
+                    ">🦯</div>
+                </div>
             `,
-            iconSize: [size, size],
+            iconSize: [size, size + 8],
             iconAnchor: [size / 2, size / 2]
         });
     },

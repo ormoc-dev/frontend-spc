@@ -12,14 +12,22 @@ const App = {
     init() {
         this.container = document.getElementById('app');
         console.log('SmartPath Cane initialized');
-        this.render();
+
+        // Check for existing auth session
+        const hasSession = Auth.init();
+        if (hasSession) {
+            console.log('Restored session for:', Auth.getUser()?.email);
+            this.showDashboard();
+        } else {
+            this.renderLanding();
+        }
         this.attachEventListeners();
     },
 
     /**
      * Render landing page
      */
-    render() {
+    renderLanding() {
         this.container.innerHTML = `
             ${this.renderHeader()}
             <main class="main-content">
@@ -31,6 +39,7 @@ const App = {
         `;
 
         setTimeout(() => this.initLandingMap(), 100);
+        this.attachEventListeners();
     },
 
     /**
@@ -103,8 +112,16 @@ const App = {
         return `
             <section class="map-section" id="tracker">
                 <div class="container">
-                    <h2 class="section-title text-center">Live Location Tracker</h2>
-                    <p class="section-subtitle text-center">Real-time GPS tracking for peace of mind</p>
+                    <div class="tracker-header-row">
+                        <div class="tracker-title-group">
+                            <h2 class="section-title text-center">Live Location Tracker</h2>
+                            <p class="section-subtitle text-center">Real-time GPS tracking for peace of mind</p>
+                        </div>
+                        <button class="btn btn-install" id="btn-install-app">
+                            <span class="btn-icon">📱</span>
+                            Install Mobile App
+                        </button>
+                    </div>
                     <div class="map-container">
                         <div id="landing-map" class="google-map"></div>
                         <div class="map-overlay">
@@ -204,39 +221,81 @@ const App = {
     },
 
     /**
+     * Render landing page (alias for renderLanding)
+     */
+    render() {
+        this.renderLanding();
+    },
+
+    /**
      * Attach event listeners
      */
     attachEventListeners() {
+        // Use event delegation on the container to avoid duplicate listeners
+        this.container.removeEventListener('click', this.handleContainerClick);
+        this.container.addEventListener('click', this.handleContainerClick);
+
+        // Smooth scroll for nav links (delegate these too)
+        this.container.removeEventListener('click', this.handleNavLinkClick);
+        this.container.addEventListener('click', this.handleNavLinkClick);
+    },
+
+    /**
+     * Handle container clicks (event delegation)
+     */
+    handleContainerClick(e) {
         // Navigation toggle
-        document.getElementById('nav-toggle')?.addEventListener('click', () => {
+        if (e.target.closest('#nav-toggle')) {
             document.getElementById('nav-mobile')?.classList.toggle('active');
-        });
+            return;
+        }
 
         // Login buttons
-        document.getElementById('btn-login')?.addEventListener('click', () => Auth.showModal('login'));
-        document.getElementById('btn-login-mobile')?.addEventListener('click', () => Auth.showModal('login'));
+        if (e.target.closest('#btn-login') || e.target.closest('#btn-login-mobile')) {
+            Auth.showModal('login');
+            document.getElementById('nav-mobile')?.classList.remove('active');
+            return;
+        }
 
         // Dashboard buttons
-        document.getElementById('btn-dashboard')?.addEventListener('click', () => this.showDashboard());
-        document.getElementById('btn-dashboard-mobile')?.addEventListener('click', () => this.showDashboard());
+        if (e.target.closest('#btn-dashboard') || e.target.closest('#btn-dashboard-mobile')) {
+            App.showDashboard();
+            document.getElementById('nav-mobile')?.classList.remove('active');
+            return;
+        }
 
-        // Hero buttons
-        document.getElementById('btn-get-started')?.addEventListener('click', () => Auth.showModal('register'));
-        document.getElementById('btn-learn-more')?.addEventListener('click', () => {
+        // Get Started button
+        if (e.target.closest('#btn-get-started')) {
+            Auth.showModal('register');
+            return;
+        }
+
+        // Learn More button
+        if (e.target.closest('#btn-learn-more')) {
             document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-        });
+            return;
+        }
 
-        // Smooth scroll for nav links
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const target = document.querySelector(link.getAttribute('href'));
-                if (target) {
-                    e.preventDefault();
-                    target.scrollIntoView({ behavior: 'smooth' });
-                    document.getElementById('nav-mobile')?.classList.remove('active');
-                }
-            });
-        });
+        // Install app button
+        if (e.target.closest('#btn-install-app')) {
+            UI.showToast('📱 Coming Soon: Mobile app installation will be available shortly!', 'info');
+            return;
+        }
+    },
+
+    /**
+     * Handle nav link clicks for smooth scroll
+     */
+    handleNavLinkClick(e) {
+        const link = e.target.closest('a[href^="#"]');
+        if (!link) return;
+
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('nav-mobile')?.classList.remove('active');
+        }
     }
 };
 

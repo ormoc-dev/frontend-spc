@@ -35,7 +35,7 @@ const Dashboard = {
             <header class="dashboard-header">
                 <div class="dashboard-header-brand">
                     <span class="dashboard-header-icon">🦯</span>
-                    <span>SmartPath Cane</span>
+                    <span>SmartPath</span>
                 </div>
                 <div class="dashboard-header-actions">
                     <button class="btn btn-outline btn-sm" id="btn-back">
@@ -160,11 +160,12 @@ const Dashboard = {
                 <div class="stat-card">
                     <div class="stat-icon stat-icon-success">📍</div>
                     <div class="stat-content">
-                        <div class="stat-value">24</div>
-                        <div class="stat-label">Locations Today</div>
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Live Locations</div>
                     </div>
                 </div>
                 <div class="stat-card">
+                    <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
                     <div class="stat-icon stat-icon-warning">🚨</div>
                     <div class="stat-content">
                         <div class="stat-value">2</div>
@@ -172,6 +173,7 @@ const Dashboard = {
                     </div>
                 </div>
                 <div class="stat-card">
+                    <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
                     <div class="stat-icon stat-icon-info">🔋</div>
                     <div class="stat-content">
                         <div class="stat-value">85%</div>
@@ -210,6 +212,7 @@ const Dashboard = {
                             <div class="alert-item alert-item-danger">
                                 <span>🚨</span>
                                 <div class="alert-content">
+                                  <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
                                     <div class="alert-title">SOS Button Pressed</div>
                                     <div class="alert-time">5 min ago</div>
                                 </div>
@@ -217,6 +220,7 @@ const Dashboard = {
                             <div class="alert-item alert-item-warning">
                                 <span>🔋</span>
                                 <div class="alert-content">
+                                  <span class="coming-soon-badge coming-soon-top">Comming Soon</span>
                                     <div class="alert-title">Low Battery</div>
                                     <div class="alert-time">1 hr ago</div>
                                 </div>
@@ -234,31 +238,36 @@ const Dashboard = {
     renderDevices() {
         return `
             <div class="dashboard-tab-header">
-                <h1 class="dashboard-title">My Devices</h1>
+                <div>
+                    <h1 class="dashboard-title">My Devices</h1>
+                </div>
                 <button class="btn btn-primary btn-sm">+ Add Device</button>
             </div>
-            
+
             <div class="dashboard-card">
                 <div class="dashboard-card-body">
                     <div class="device-list">
                         <div class="device-item">
-                            <div class="device-info">
-                                <span class="device-icon">🦯</span>
-                                <div class="device-details">
-                                    <div class="device-name">SmartPath Cane #1</div>
-                                    <div class="device-id">SPC-001</div>
+                            <div class="device-header">
+                                <div class="device-info">
+                                    <span class="device-icon">🦯</span>
+                                    <div class="device-details">
+                                        <div class="device-name">SmartPath Cane #1</div>
+                                        <div class="device-id">SPC-001</div>
+                                    </div>
+                                </div>
+                                <div class="device-status">
+                                    <div class="device-battery">
+                                        <div class="battery-bar"><div class="battery-fill" style="width:85%"></div></div>
+                                        <span>85%</span>
+                                    </div>
+                                    <span class="status-badge status-online">Online</span>
                                 </div>
                             </div>
-                            <div class="device-status">
-                                <div class="device-battery">
-                                    <div class="battery-bar"><div class="battery-fill" style="width:85%"></div></div>
-                                    <span>85%</span>
-                                </div>
-                                <span class="status-badge status-online">Online</span>
-                            </div>
-                            <div class="device-actions">
-                                <button class="btn btn-outline btn-sm">Track</button>
-                                <button class="btn btn-outline btn-sm">Settings</button>
+                            <div class="device-actions device-actions-full">
+                                <button class="btn btn-outline btn-sm">📍 Track</button>
+                                <button class="btn btn-outline btn-sm">⚙️ Settings</button>
+                                <button class="btn btn-outline btn-sm">📊 History</button>
                             </div>
                         </div>
                     </div>
@@ -273,16 +282,83 @@ const Dashboard = {
     renderLocations() {
         return `
             <div class="dashboard-tab-header">
-                <h1 class="dashboard-title">Location History</h1>
+                <div>
+                    <h1 class="dashboard-title">Live Location</h1>
+                    <p class="dashboard-subtitle">Real-time device tracking</p>
+                </div>
+                <span class="status-badge status-online">● Online</span>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">📍 Current Position</h3>
+                    <span class="coming-soon-badge">Live</span>
+                </div>
+                <div class="dashboard-card-body">
+                    <div class="full-map" id="live-location-map"></div>
+                    <div class="location-info" style="margin-top: var(--space-4);">
+                        <div class="location-item">
+                            <span class="location-label">Device</span>
+                            <span class="location-value">SPC-001</span>
+                        </div>
+                        <div class="location-item">
+                            <span class="location-label">Address</span>
+                            <span class="location-value">Ormoc City, Leyte</span>
+                        </div>
+                        <div class="location-item">
+                            <span class="location-label">Last Updated</span>
+                            <span class="location-value">Just now</span>
+                        </div>
+                        <div class="location-item">
+                            <span class="location-label">Accuracy</span>
+                            <span class="location-value">±5 meters</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-tab-header" style="margin-top: var(--space-8);">
+                <div>
+                    <h1 class="dashboard-title">Location History</h1>
+                    <p class="dashboard-subtitle">Past location records</p>
+                </div>
                 <select class="form-select form-select-sm">
                     <option>Last 24 Hours</option>
                     <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
                 </select>
             </div>
-            
+
             <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">📊 Movement History</h3>
+                    <span class="coming-soon-badge coming-soon-badge-soon">Comming Soon</span>
+                </div>
                 <div class="dashboard-card-body">
-                    <div class="full-map" id="locations-map"></div>
+                    <div class="full-map" id="locations-map" style="opacity: 0.6;"></div>
+                    <div class="location-list" style="margin-top: var(--space-4);">
+                        <div class="location-list-item">
+                            <span class="location-marker">📍</span>
+                            <div class="location-details">
+                                <div class="location-address">Ormoc City, Leyte</div>
+                                <div class="alert-time">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="location-list-item">
+                            <span class="location-marker">📍</span>
+                            <div class="location-details">
+                                <div class="location-address">Palo, Leyte</div>
+                                <div class="alert-time">5 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="location-list-item">
+                            <span class="location-marker">📍</span>
+                            <div class="location-details">
+                                <div class="location-address">Tacloban City</div>
+                                <div class="alert-time">Yesterday</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -294,24 +370,38 @@ const Dashboard = {
     renderAlerts() {
         return `
             <div class="dashboard-tab-header">
-                <h1 class="dashboard-title">Alerts</h1>
+                <div>
+                    <h1 class="dashboard-title">Alerts</h1>
+                </div>
                 <select class="form-select form-select-sm">
                     <option>All Alerts</option>
                     <option>Unresolved</option>
                 </select>
             </div>
-            
+
             <div class="dashboard-card">
                 <div class="dashboard-card-body">
                     <div class="alert-list">
-                        <div class="alert-item alert-item-danger">
-                            <div class="alert-badge alert-badge-danger">SOS</div>
+                        <div class="alert-item alert-item-detailed alert-item-danger">
+                            <div class="alert-header">
+                                <div class="alert-badge alert-badge-danger">SOS</div>
+                                <div class="alert-meta">
+                                    <span>SPC-001</span>
+                                    <span class="alert-dot">•</span>
+                                    <span>2 min ago</span>
+                                </div>
+                            </div>
                             <div class="alert-content">
-                                <h4 class="alert-title">Emergency SOS</h4>
-                                <p class="alert-description">SOS button pressed</p>
+                                <h4 class="alert-title">Emergency SOS Button Pressed</h4>
+                                <p class="alert-description">User triggered emergency alert from device</p>
+                                <div class="alert-location">
+                                    <span>📍</span>
+                                    <span>Ormoc City, Leyte</span>
+                                </div>
                             </div>
                             <div class="alert-actions">
-                                <button class="btn btn-primary btn-sm">Resolve</button>
+                                <button class="btn btn-primary btn-sm">✓ Resolve</button>
+                                <button class="btn btn-outline btn-sm">📍 View Location</button>
                             </div>
                         </div>
                     </div>
@@ -326,7 +416,9 @@ const Dashboard = {
     renderGeofences() {
         return `
             <div class="dashboard-tab-header">
-                <h1 class="dashboard-title">Geofences</h1>
+                <div>
+                    <h1 class="dashboard-title">Geofences</h1>
+                </div>
                 <button class="btn btn-primary btn-sm">+ Add Geofence</button>
             </div>
             
@@ -419,8 +511,20 @@ const Dashboard = {
      */
     initLocationsMap() {
         setTimeout(() => {
-            Maps.init('locations-map', { zoom: 15 });
-            Maps.addMarker('locations-map', Maps.defaultLocation);
+            // Initialize live location map
+            const liveMap = Maps.init('live-location-map', { zoom: 16 });
+            if (liveMap) {
+                Maps.addMarker('live-location-map', Maps.defaultLocation, {
+                    popup: '<b>Current Location</b><br>Device: SPC-001'
+                });
+            }
+            // Initialize history map
+            const historyMap = Maps.init('locations-map', { zoom: 14 });
+            if (historyMap) {
+                Maps.addMarker('locations-map', Maps.defaultLocation, {
+                    popup: '<b>Last Known Location</b><br>Device: SPC-001'
+                });
+            }
         }, 100);
     },
 

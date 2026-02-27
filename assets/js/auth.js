@@ -8,6 +8,41 @@ const Auth = {
     modal: null,
 
     /**
+     * Initialize auth - check for existing session
+     */
+    init() {
+        const savedUser = localStorage.getItem('spc_user');
+        const savedToken = localStorage.getItem('spc_token');
+
+        if (savedUser && savedToken) {
+            this.currentUser = JSON.parse(savedUser);
+            api.setToken(savedToken);
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Save auth session to localStorage
+     */
+    saveSession(user, token) {
+        this.currentUser = user;
+        localStorage.setItem('spc_user', JSON.stringify(user));
+        localStorage.setItem('spc_token', token);
+        api.setToken(token);
+    },
+
+    /**
+     * Clear auth session from localStorage
+     */
+    clearSession() {
+        this.currentUser = null;
+        localStorage.removeItem('spc_user');
+        localStorage.removeItem('spc_token');
+        api.clearToken();
+    },
+
+    /**
      * Show auth modal
      */
     showModal(mode = 'login') {
@@ -81,8 +116,7 @@ const Auth = {
                     : await AuthAPI.register(data);
 
                 if (response.success) {
-                    this.currentUser = response.data?.user || null;
-                    api.setToken(response.data?.token);
+                    this.saveSession(response.data?.user, response.data?.token);
                     this.modal?.close();
                     UI.showToast(mode === 'login' ? 'Welcome back!' : 'Account created!', 'success');
                     App.showDashboard();
@@ -119,12 +153,12 @@ const Auth = {
     async logout() {
         try {
             await AuthAPI.logout();
-            this.currentUser = null;
-            api.clearToken();
-            UI.showToast('Logged out successfully', 'success');
-            App.render();
         } catch (error) {
             console.error('Logout error:', error);
+        } finally {
+            this.clearSession();
+            UI.showToast('Logged out successfully', 'success');
+            App.render();
         }
     },
 

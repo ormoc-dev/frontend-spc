@@ -36,22 +36,18 @@ const Maps = {
             options.zoom || 15
         );
 
-        // Add high-quality satellite tile layer (retina support)
-        const isRetina = window.devicePixelRatio > 1;
-        const tileUrl = isRetina
-            ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-            : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-
-        L.tileLayer(tileUrl, {
+        // Add high-quality satellite tile layer with better zoom support
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri',
-            maxZoom: 19,
+            maxZoom: 22,
             maxNativeZoom: 18,
-            detectRetina: true
+            detectRetina: true,
+            subdomains: ['server', 'services']
         }).addTo(map);
 
-        // Add labels layer with retina support
+        // Add labels layer
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
+            maxZoom: 22,
             maxNativeZoom: 18,
             opacity: 0.8,
             detectRetina: true

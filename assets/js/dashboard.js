@@ -31,12 +31,84 @@ const Dashboard = {
         // Initialize last alert ID and start checking for alerts
         this.lastAlertId = null;
         this.startSOSAlertCheck();
+
+        // Initialize audio context to bypass autoplay restrictions
+        this.initAudioContext();
+    },
+
+    /**
+     * Initialize audio context to bypass autoplay restrictions
+     */
+    initAudioContext() {
+        // Create a global audio context to be used for sound effects
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (typeof window.dashboardAudioContext === 'undefined') {
+            window.dashboardAudioContext = new AudioContext();
+
+            // Resume if suspended (which it usually is after page load)
+            if (window.dashboardAudioContext.state === 'suspended') {
+                // Attempt to resume on first user interaction
+                const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+
+                const unlockAudio = () => {
+                    window.dashboardAudioContext.resume().then(() => {
+                        console.log('Audio Context unlocked');
+
+                        // Remove event listeners after unlocking
+                        events.forEach(event => {
+                            document.removeEventListener(event, unlockAudio);
+                        });
+                    }).catch(e => {
+                        console.warn('Could not unlock audio:', e);
+                    });
+                };
+
+                events.forEach(event => {
+                    document.addEventListener(event, unlockAudio, { once: true });
+                });
+            }
+        }
+    },
+
+    /**
+     * Initialize audio context on first user interaction
+     */
+    initAudioContext() {
+        // Create a temporary audio context to be used when needed
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        // Listen for any user interaction to unlock audio
+        const events = ['click', 'touchstart', 'keydown'];
+
+        const enableAudio = () => {
+            const audioContext = new AudioContext();
+
+            // Resume if suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            // Remove event listeners after first interaction
+            events.forEach(event => {
+                document.removeEventListener(event, enableAudio);
+            });
+        };
+
+        events.forEach(event => {
+            document.addEventListener(event, enableAudio, { once: true });
+        });
     },
 
     /**
      * Play SOS alert sound using alarm.mp3
      */
     async playSOSAlertSound() {
+        // Modern browsers require user interaction for audio autoplay
+        // Ensure the audio context is ready
+        if (!window.dashboardAudioContext) {
+            this.initAudioContext();
+        }
+
         // Use the provided alarm.mp3 file - adjust path based on context
         // The dashboard might be loaded from a different context than the frontend root
         const audioPaths = [
@@ -52,10 +124,19 @@ const Dashboard = {
                 const audio = new Audio(path);
                 audio.volume = 0.7;
 
-                // Try to play the audio
-                await audio.play();
-                console.log('Audio played successfully from:', path);
-                return; // Success, exit function
+                // Modern browsers require user gesture for autoplay - catch the potential error
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    try {
+                        await playPromise;
+                        console.log('Audio played successfully from:', path);
+                        return; // Success, exit function
+                    } catch (playError) {
+                        console.debug(`Autoplay prevented or failed for: ${path}`, playError);
+                        // If autoplay is blocked, continue to try next path
+                    }
+                }
             } catch (err) {
                 console.debug(`Audio path failed: ${path}`, err);
                 // Continue to next path
@@ -72,7 +153,20 @@ const Dashboard = {
      */
     playFallbackSOSAlertSound() {
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Use the shared audio context
+            let audioContext = window.dashboardAudioContext;
+
+            // If no shared context exists, create a new one
+            if (!audioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+
+                // Resume the context if it's suspended (common after page load)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
+
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -89,6 +183,27 @@ const Dashboard = {
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 1);
+
+            // Additional beep
+            setTimeout(() => {
+                try {
+                    const osc2 = audioContext.createOscillator();
+                    const gain2 = audioContext.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioContext.destination);
+                    osc2.type = 'sawtooth';
+                    osc2.frequency.setValueAtTime(800, audioContext.currentTime);
+                    osc2.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
+                    osc2.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 1);
+                    gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                    osc2.start(audioContext.currentTime);
+                    osc2.stop(audioContext.currentTime + 1);
+                } catch (e2) {
+                    console.error('Second fallback sound failed:', e2);
+                }
+            }, 1200);
+
         } catch (e) {
             console.error('Fallback sound failed:', e);
         }

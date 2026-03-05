@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartpath-cane-v2';
+const CACHE_NAME = 'smartpath-cane-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

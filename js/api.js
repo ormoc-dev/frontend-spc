@@ -4,150 +4,140 @@
  * Communicates with Hostinger Backend
  */
 
-class APIClient {
-    constructor() {
-        this.baseURL = CONFIG.API_URL;
-        this.headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        };
-    }
-
-    /**
-     * Set auth token
-     */
-    setToken(token) {
-        this.headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    /**
-     * Clear auth token
-     */
-    clearToken() {
-        delete this.headers['Authorization'];
-    }
-
-    /**
-     * Make API request
-     */
-    async request(endpoint, method = 'GET', data = null) {
-        // Build URL - if baseURL contains .php, use query string
-        let url;
-        if (this.baseURL.includes('.php')) {
-            const separator = this.baseURL.includes('?') ? '&' : '?';
-            url = `${this.baseURL}${separator}path=${encodeURIComponent(endpoint)}&_t=${Date.now()}`;
-        } else {
-            url = `${this.baseURL}${endpoint}`;
-        }
-
-        // Debug: log the URL being called
-        console.log('API Request URL:', url);
-
-        const options = {
-            method,
-            headers: this.headers,
-            mode: 'cors',
-            credentials: 'include'
-        };
-
-        if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-            options.body = JSON.stringify(data);
-        }
-
-        try {
-            const response = await fetch(url, options);
-
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || `HTTP ${response.status}`);
-            }
-
-            return result;
-        } catch (error) {
-            console.error('API Error:', error);
-            throw error;
-        }
-    }
-
-    // GET request
-    get(endpoint) {
-        return this.request(endpoint, 'GET');
-    }
-
-    // POST request
-    post(endpoint, data) {
-        return this.request(endpoint, 'POST', data);
-    }
-
-    // PUT request
-    put(endpoint, data) {
-        return this.request(endpoint, 'PUT', data);
-    }
-
-    // DELETE request
-    delete(endpoint) {
-        return this.request(endpoint, 'DELETE');
-    }
+function APIClient() {
+    this.baseURL = window.CONFIG ? window.CONFIG.API_URL : '';
+    this.headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
 }
 
+/**
+ * Set auth token
+ */
+APIClient.prototype.setToken = function (token) {
+    this.headers['Authorization'] = 'Bearer ' + token;
+};
+
+/**
+ * Clear auth token
+ */
+APIClient.prototype.clearToken = function () {
+    delete this.headers['Authorization'];
+};
+
+/**
+ * Make API request
+ */
+APIClient.prototype.request = function (endpoint, method, data) {
+    if (!method) method = 'GET';
+
+    // Build URL
+    var url;
+    if (this.baseURL.indexOf('.php') !== -1) {
+        var separator = this.baseURL.indexOf('?') !== -1 ? '&' : '?';
+        url = this.baseURL + separator + 'path=' + encodeURIComponent(endpoint) + '&_t=' + Date.now();
+    } else {
+        url = this.baseURL + endpoint;
+    }
+
+    console.log('API Request URL:', url);
+
+    var options = {
+        method: method,
+        headers: this.headers,
+        mode: 'cors',
+        credentials: 'include'
+    };
+
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        options.body = JSON.stringify(data);
+    }
+
+    return fetch(url, options).then(function (response) {
+        var contentType = response.headers.get('content-type');
+        if (!contentType || contentType.indexOf('application/json') === -1) {
+            return response.text().then(function (text) {
+                throw new Error('Server returned HTML instead of JSON. Status: ' + response.status);
+            });
+        }
+
+        return response.json().then(function (result) {
+            if (!response.ok) {
+                throw new Error(result.error || 'HTTP ' + response.status);
+            }
+            return result;
+        });
+    })['catch'](function (error) {
+        console.error('API Error:', error);
+        throw error;
+    });
+};
+
+// Convenience methods
+APIClient.prototype.get = function (endpoint) { return this.request(endpoint, 'GET'); };
+APIClient.prototype.post = function (endpoint, data) { return this.request(endpoint, 'POST', data); };
+APIClient.prototype.put = function (endpoint, data) { return this.request(endpoint, 'PUT', data); };
+APIClient.prototype.delete = function (endpoint) { return this.request(endpoint, 'DELETE'); };
+
 // Create global API client instance
-const api = new APIClient();
+window.api = new APIClient();
 
 // Auth API
-const AuthAPI = {
-    login: (email, password) => api.post('/api/auth/login', { email, password }),
-    register: (data) => api.post('/api/auth/register', data),
-    logout: () => api.post('/api/auth/logout'),
-    me: () => api.get('/api/auth/me'),
-    forgotPassword: (email) => api.post('/api/auth/forgot-password', { email }),
-    resetPassword: (token, password) => api.post('/api/auth/reset-password', { token, password })
+window.AuthAPI = {
+    login: function (email, password) { return window.api.post('/api/auth/login', { email: email, password: password }); },
+    register: function (data) { return window.api.post('/api/auth/register', data); },
+    logout: function () { return window.api.post('/api/auth/logout'); },
+    me: function () { return window.api.get('/api/auth/me'); },
+    forgotPassword: function (email) { return window.api.post('/api/auth/forgot-password', { email: email }); },
+    resetPassword: function (token, password) { return window.api.post('/api/auth/reset-password', { token: token, password: password }); }
 };
 
 // User API
-const UserAPI = {
-    getProfile: () => api.get('/api/user/profile'),
-    updateProfile: (data) => api.put('/api/user/profile', data),
-    changePassword: (data) => api.put('/api/user/password', data)
+window.UserAPI = {
+    getProfile: function () { return window.api.get('/api/user/profile'); },
+    updateProfile: function (data) { return window.api.put('/api/user/profile', data); },
+    changePassword: function (data) { return window.api.put('/api/user/password', data); }
 };
 
 // Device API
-const DeviceAPI = {
-    list: () => api.get('/api/devices'),
-    get: (id) => api.get(`/api/devices/${id}`),
-    create: (data) => api.post('/api/devices', data),
-    update: (id, data) => api.put(`/api/devices/${id}`, data),
-    delete: (id) => api.delete(`/api/devices/${id}`),
-    getLocation: (id) => api.get(`/api/devices/${id}/location`),
-    getHistory: (id) => api.get(`/api/devices/${id}/history`)
+window.DeviceAPI = {
+    list: function () { return window.api.get('/api/devices'); },
+    get: function (id) { return window.api.get('/api/devices/' + id); },
+    create: function (data) { return window.api.post('/api/devices', data); },
+    update: function (id, data) { return window.api.put('/api/devices/' + id, data); },
+    delete: function (id) { return window.api.delete('/api/devices/' + id); },
+    getLocation: function (id) { return window.api.get('/api/devices/' + id + '/location'); },
+    getHistory: function (id) { return window.api.get('/api/devices/' + id + '/history'); }
 };
 
 // SOS Alert API
-const AlertAPI = {
-    list: () => api.get('/api/alerts'),
-    get: (id) => api.get(`/api/alerts/${id}`),
-    create: (data) => api.post('/api/alerts', data),
-    acknowledge: (id) => api.put(`/api/alerts/${id}/acknowledge`),
-    resolve: (id) => api.put(`/api/alerts/${id}/resolve`)
+window.AlertAPI = {
+    list: function () { return window.api.get('/api/alerts'); },
+    get: function (id) { return window.api.get('/api/alerts/' + id); },
+    create: function (data) { return window.api.post('/api/alerts', data); },
+    acknowledge: function (id) { return window.api.put('/api/alerts/' + id + '/acknowledge'); },
+    resolve: function (id) { return window.api.put('/api/alerts/' + id + '/resolve'); }
 };
 
 // Geofence API
-const GeofenceAPI = {
-    list: () => api.get('/api/geofences'),
-    get: (id) => api.get(`/api/geofences/${id}`),
-    create: (data) => api.post('/api/geofences', data),
-    update: (id, data) => api.put(`/api/geofences/${id}`, data),
-    delete: (id) => api.delete(`/api/geofences/${id}`)
+window.GeofenceAPI = {
+    list: function () { return window.api.get('/api/geofences'); },
+    get: function (id) { return window.api.get('/api/geofences/' + id); },
+    create: function (data) { return window.api.post('/api/geofences', data); },
+    update: function (id, data) { return window.api.put('/api/geofences/' + id, data); },
+    delete: function (id) { return window.api.delete('/api/geofences/' + id); }
 };
 
 // Export APIs
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { APIClient, api, AuthAPI, UserAPI, DeviceAPI, AlertAPI, GeofenceAPI };
+    module.exports = {
+        APIClient: APIClient,
+        api: window.api,
+        AuthAPI: window.AuthAPI,
+        UserAPI: window.UserAPI,
+        DeviceAPI: window.DeviceAPI,
+        AlertAPI: window.AlertAPI,
+        GeofenceAPI: window.GeofenceAPI
+    };
 }

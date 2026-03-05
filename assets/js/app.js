@@ -67,7 +67,8 @@ const App = {
             ${this.renderFooter()}
         `;
 
-        setTimeout(() => this.initLandingMap(), 100);
+        var self = this;
+        setTimeout(function () { self.initLandingMap(); }, 100);
         this.attachEventListeners();
     },
 
@@ -196,15 +197,17 @@ const App = {
             <section class="features" id="features">
                 <div class="container">
                     <h2 class="section-title text-center">Key Features</h2>
-                    <div class="features-grid">
-                        ${features.map(f => `
-                            <div class="feature-card">
-                                <div class="feature-icon">${f.icon}</div>
-                                <h3 class="feature-title">${f.title}</h3>
-                                <p class="feature-description">${f.desc}</p>
-                            </div>
-                        `).join('')}
-                    </div>
+                <div class="features-grid">
+                    ${features.map(function (f) {
+            return `
+                        <div class="feature-card">
+                            <div class="feature-icon">${f.icon}</div>
+                            <h3 class="feature-title">${f.title}</h3>
+                            <p class="feature-description">${f.desc}</p>
+                        </div>
+                    `;
+        }).join('')}
+                </div>
                 </div>
             </section>
         `;
@@ -309,7 +312,7 @@ const App = {
         if (e.target.closest('#btn-install-app')) {
             if (App.deferredPrompt) {
                 App.deferredPrompt.prompt();
-                App.deferredPrompt.userChoice.then((choiceResult) => {
+                App.deferredPrompt.userChoice.then(function (choiceResult) {
                     if (choiceResult.outcome === 'accepted') {
                         console.log('User accepted the install prompt');
                     } else {

@@ -8,6 +8,19 @@
         content="SmartPath Cane - Advanced navigation technology with real-time tracking and emergency alerts for enhanced mobility and safety.">
     <meta name="theme-color" content="#2563eb">
 
+    <script>
+        // Early Error Catcher - Must be ES5
+        window.onerror = function (msg, url, line, col, error) {
+            var statusBox = document.getElementById('loading-status');
+            if (statusBox) {
+                statusBox.style.color = '#e11d48';
+                statusBox.innerHTML = 'Critical Error: ' + msg + ' (Line: ' + line + ')';
+            }
+            console.error('PWA Error:', msg, 'at', url, ':', line);
+            return false;
+        };
+    </script>
+
     <title>SmartPath Cane - Smart Navigation for Everyone</title>
 
     <!-- Favicon -->
@@ -58,7 +71,7 @@
         <!-- Content will be rendered by app.js -->
         <div class="loading-screen">
             <div class="spinner"></div>
-            <p>Loading SmartPath Cane...</p>
+            <p id="loading-status">Loading SmartPath Cane...</p>
         </div>
     </div>
 
@@ -67,39 +80,56 @@
 
     <!-- Watchdog & Debug -->
     <script>
-        // Detection for hangs on mobile
-        window.addEventListener('error', function (e) {
-            console.error('Global Error:', e.message);
-            const statusBox = document.querySelector('.loading-screen p');
-            if (statusBox) {
-                statusBox.style.color = '#e11d48';
-                statusBox.innerHTML = 'Error: ' + e.message + '<br><small>Check console or reload</small>';
-            }
-        });
-
-        setTimeout(() => {
-            const loadingScreen = document.querySelector('.loading-screen');
+        // Watchdog for mobile hangs - ES5
+        setTimeout(function () {
+            var loadingScreen = document.querySelector('.loading-screen');
             if (loadingScreen && loadingScreen.offsetParent !== null) {
-                console.warn('App still loading after 5s - showing fallback');
-                const statusBox = loadingScreen.querySelector('p');
-                if (statusBox) statusBox.innerHTML += '<br><button onclick="location.reload()" style="margin-top:10px; padding:5px 10px; background:#2563eb; color:white; border:none; border-radius:4px;">Force Reload</button>';
+                var statusBox = document.getElementById('loading-status');
+                if (statusBox) {
+                    statusBox.innerHTML += '<br><div style="margin-top:10px">' +
+                        '<button onclick="location.reload(true)" style="padding:8px 15px; background:#2563eb; color:white; border:none; margin-right:5px;">Reload</button>' +
+                        '<button onclick="clearPWACache()" style="padding:8px 15px; background:#000; color:white; border:none;">Clear Cache</button>' +
+                        '</div>';
+                }
             }
-        }, 5000);
+        }, 4000);
+
+        function clearPWACache() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (var i = 0; i < registrations.length; i++) {
+                        registrations[i].unregister();
+                    }
+                    caches.keys().then(function (names) {
+                        for (var name of names) caches.delete(name);
+                        alert('Cache cleared. Reloading...');
+                        window.location.reload(true);
+                    });
+                });
+            } else {
+                window.location.reload(true);
+            }
+        }
     </script>
 
     <!-- Initialize -->
     <script>
-        // Log environment info
-        console.log('%c SmartPath Cane ', 'background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px;');
-        console.log('Environment:', CONFIG.ENV);
-        console.log('API URL:', CONFIG.API_URL);
+        // Log environment info - ES5
+        console.log('SmartPath Cane Loading...');
+        if (window.CONFIG) {
+            console.log('Environment:', CONFIG.ENV);
+            console.log('API URL:', CONFIG.API_URL);
+        } else {
+            console.error('CONFIG NOT FOUND AT INIT');
+            document.getElementById('loading-status').innerHTML = '<b style="color:red">CONFIG ERROR: Check config.js load order</b>';
+        }
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker: Registered'))
-                    .catch(err => console.log(`Service Worker: Error: ${err}`));
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('sw.js?v=3')
+                    .then(function (reg) { console.log('SW Registered'); })
+                    .catch(function (err) { console.log('SW Error: ' + err); });
             });
         }
     </script>

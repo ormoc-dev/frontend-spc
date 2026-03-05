@@ -5,6 +5,7 @@
 
 const App = {
     container: null,
+    deferredPrompt: null,
 
     /**
      * Initialize the application
@@ -12,6 +13,14 @@ const App = {
     init() {
         this.container = document.getElementById('app');
         console.log('SmartPath Cane initialized');
+
+        // PWA Install Prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            // The button is initially hidden or shown based on your CSS
+            // but we can ensure it's visible here if needed
+        });
 
         // Check for existing auth session
         const hasSession = Auth.init();
@@ -278,7 +287,19 @@ const App = {
 
         // Install app button
         if (e.target.closest('#btn-install-app')) {
-            UI.showToast('📱 Coming Soon: Mobile app installation will be available shortly!', 'info');
+            if (App.deferredPrompt) {
+                App.deferredPrompt.prompt();
+                App.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    App.deferredPrompt = null;
+                });
+            } else {
+                UI.showToast('📱 To install: Tap browser menu and "Add to Home Screen"', 'info');
+            }
             return;
         }
     },

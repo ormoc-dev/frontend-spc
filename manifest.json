@@ -1,0 +1,46 @@
+{
+  "name": "SmartPath Cane",
+  "short_name": "SmartPath",
+  "description": "Smart Navigation for Everyone - Real-time tracking and emergency alerts.",
+  "id": "/smartpathcane/frontend-spc/index.html",
+  "start_url": "/smartpathcane/frontend-spc/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/images/icon-512.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/icon-512.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/images/screenshot-mobile.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "SmartPath Mobile Tracking"
+    },
+    {
+      "src": "assets/images/screenshot-desktop.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "SmartPath Dashboard"
+    }
+  ],
+  "categories": [
+    "navigation",
+    "utilities",
+    "lifestyle"
+  ]
+}

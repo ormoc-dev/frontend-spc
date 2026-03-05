@@ -1,9 +1,14 @@
+const isLocal = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.') ||
+    window.location.hostname.endsWith('.local');
+
 const CONFIG = {
+    ENV: isLocal ? 'development' : 'production',
 
-    ENV: window.location.hostname === 'localhost' ? 'development' : 'production',
-
-    API_URL: window.location.hostname === 'localhost'
-        ? 'http://localhost/smartpathcane/backend-spc/public'
+    API_URL: isLocal
+        ? `http://${window.location.hostname}/smartpathcane/backend-spc/public`
         : 'https://floralwhite-raccoon-333018.hostingersite.com/backend-spc/public',
 
 

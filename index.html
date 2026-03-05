@@ -73,8 +73,57 @@
         <div class="loading-screen">
             <div class="spinner"></div>
             <p id="loading-status">Loading SmartPath Cane...</p>
+            <p id="loading-hint" style="font-size:12px;opacity:0.6;margin-top:8px;display:none;">Connecting to security
+                services...</p>
         </div>
     </div>
+
+    <!-- Watchdog & PWA Rescue - Move high so it runs even if scripts hang -->
+    <script>
+        // Diagnostic hint
+        setTimeout(function () {
+            var hint = document.getElementById('loading-hint');
+            if (hint) hint.style.display = 'block';
+        }, 2000);
+
+        // Watchdog: if still loading after 6s, show help buttons
+        setTimeout(function () {
+            var screen = document.querySelector('.loading-screen');
+            if (screen && screen.offsetParent !== null) {
+                var el = document.getElementById('loading-status');
+                if (el) {
+                    el.style.color = '#111';
+                    el.innerHTML = '<span style="color:#e11d48;font-weight:600">Taking longer than usual</span><br>' +
+                        '<p style="font-size:13px;margin:8px 0 16px;opacity:0.8">This might be due to a slow connection or cache issue.</p>' +
+                        '<div style="display:flex;gap:8px;justify-content:center">' +
+                        '<button onclick="location.reload(true)" style="padding:10px 18px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;">Retry</button>' +
+                        '<button onclick="nukePWA()" style="padding:10px 18px;background:#111;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;">Reset App</button>' +
+                        '</div>';
+                }
+            }
+        }, 6000);
+
+        function nukePWA() {
+            if (confirm('This will clear the app cache and reset the connection. Continue?')) {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function (regs) {
+                        regs.forEach(function (r) { r.unregister(); });
+                        if ('caches' in window) {
+                            caches.keys().then(function (keys) {
+                                Promise.all(keys.map(function (k) { return caches.delete(k); })).then(function () {
+                                    location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+                                });
+                            });
+                        } else {
+                            location.reload(true);
+                        }
+                    });
+                } else {
+                    location.reload(true);
+                }
+            }
+        }
+    </script>
 
     <!-- 
         ALL JS AT BOTTOM OF BODY - avoids render blocking
@@ -96,43 +145,8 @@
     <!-- Main App -->
     <script src="assets/js/app.js?v=17"></script>
 
-    <!-- Watchdog & SW Registration -->
+    <!-- Service Worker registration -->
     <script>
-        // Watchdog: if still loading after 5s, show help buttons
-        setTimeout(function () {
-            var screen = document.querySelector('.loading-screen');
-            if (screen && screen.offsetParent !== null) {
-                var el = document.getElementById('loading-status');
-                if (el) {
-                    el.innerHTML = 'Taking too long...<br>' +
-                        '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center">' +
-                        '<button onclick="location.reload(true)" style="padding:10px 18px;background:#2563eb;color:#fff;border:none;font-size:14px;">Reload</button>' +
-                        '<button onclick="nukePWA()" style="padding:10px 18px;background:#111;color:#fff;border:none;font-size:14px;">Clear Cache</button>' +
-                        '</div>';
-                }
-            }
-        }, 5000);
-
-        function nukePWA() {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function (regs) {
-                    regs.forEach(function (r) { r.unregister(); });
-                    if ('caches' in window) {
-                        caches.keys().then(function (keys) {
-                            keys.forEach(function (k) { caches.delete(k); });
-                            alert('Cache cleared! Reloading...');
-                            location.href = location.href + '?nocache=' + Date.now();
-                        });
-                    } else {
-                        location.reload(true);
-                    }
-                });
-            } else {
-                location.reload(true);
-            }
-        }
-
-        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('sw.js')

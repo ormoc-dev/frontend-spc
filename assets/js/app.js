@@ -343,5 +343,11 @@ const App = {
     }
 };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => App.init());
+// Initialize - handle case where DOMContentLoaded already fired
+// (happens when scripts are at the bottom of body)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { App.init(); });
+} else {
+    // DOM is already ready, call immediately
+    App.init();
+}

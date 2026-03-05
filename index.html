@@ -50,9 +50,31 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
-    <!-- Configuration -->
-    <script src="js/config.js?v=6"></script>
-    <script src="js/api.js?v=5"></script>
+    <!-- CONFIG: Inlined to prevent PWA cache miss issues -->
+    <script>
+        (function () {
+            var h = window.location.hostname;
+            var isLocal = (h === 'localhost' || h === '127.0.0.1' ||
+                h.indexOf('192.168.') === 0 || h.indexOf('10.') === 0 ||
+                h.indexOf('.local') !== -1);
+            window.CONFIG = {
+                ENV: isLocal ? 'development' : 'production',
+                API_URL: isLocal
+                    ? 'http://' + h + '/smartpathcane/backend-spc/public'
+                    : 'https://floralwhite-raccoon-333018.hostingersite.com/backend-spc/public',
+                APP_NAME: 'SmartPath Cane',
+                VERSION: '1.0.5',
+                CACHE_DURATION: 300000,
+                MAX_RETRIES: 3,
+                TIMEOUT: 10000
+            };
+            console.log('[Config] ENV:', window.CONFIG.ENV);
+            console.log('[Config] API:', window.CONFIG.API_URL);
+        })();
+    </script>
+
+    <!-- API Client (depends on CONFIG) -->
+    <script src="js/api.js?v=6"></script>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

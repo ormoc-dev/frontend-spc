@@ -1,8 +1,9 @@
-const CACHE_NAME = 'smartpath-cane-v3';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
+/**
+ * Service Worker - SmartPath Cane
+ * Strategy: HTML = Network First (never stale), Assets = Cache First
+ */
+const CACHE_NAME = 'smartpath-cane-v4';
+const STATIC_ASSETS = [
   './assets/css/main.css',
   './assets/css/components.css',
   './assets/js/app.js',
@@ -10,67 +11,71 @@ const ASSETS_TO_CACHE = [
   './assets/js/maps.js',
   './assets/js/auth.js',
   './assets/js/dashboard.js',
-  './js/config.js',
   './js/api.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+  './assets/images/icon-512.png'
 ];
 
-// Install event - cache core assets
-self.addEventListener('install', (event) => {
+// Install - pre-cache only static assets (NOT index.html or config.js)
+self.addEventListener('install', function (event) {
+  self.skipWaiting(); // Activate immediately
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(function (cache) {
+      console.log('[SW] Caching static assets');
+      return cache.addAll(STATIC_ASSETS).catch(function (err) {
+        console.warn('[SW] Some assets failed to cache:', err);
+      });
     })
   );
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
+// Activate - clean up old caches immediately
+self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(function (cacheNames) {
       return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Service Worker: Clearing old cache');
-            return caches.delete(cache);
+        cacheNames.map(function (name) {
+          if (name !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
           }
         })
       );
+    }).then(function () {
+      return self.clients.claim(); // Take control immediately
     })
   );
 });
 
-// Fetch event - cache-first strategy with network fallback
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return;
+// Fetch - Network First for HTML, Cache First for static assets
+self.addEventListener('fetch', function (event) {
+  var url = event.request.url;
 
+  // Only handle http/https
+  if (url.indexOf('http') !== 0) return;
+
+  // HTML pages: always fetch from network (critical for config to work!)
+  var isHTML = event.request.headers.get('accept') &&
+    event.request.headers.get('accept').indexOf('text/html') !== -1;
+  if (isHTML || url.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).catch(function () {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Static assets: Cache first, network fallback
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached response if found
-      if (response) return response;
-
-      // Otherwise fetch from network
-      return fetch(event.request).then((networkResponse) => {
-        // Check if we should cache this response
-        // MUST filter for http/https to avoid chrome-extension errors
-        const isSecureScheme = event.request.url.startsWith('http');
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' || !isSecureScheme) {
-          return networkResponse;
-        }
-
-        // Cache the new response
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+    caches.match(event.request).then(function (cached) {
+      if (cached) return cached;
+      return fetch(event.request).then(function (response) {
+        if (!response || response.status !== 200) return response;
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, clone);
         });
-
-        return networkResponse;
-      }).catch(() => {
-        // If offline and not in cache, you could return a fallback page here
+        return response;
       });
     })
   );

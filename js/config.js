@@ -13,7 +13,7 @@ const CONFIG = {
 
 
     APP_NAME: 'SmartPath Cane',
-    VERSION: '1.0.2', // Bumped version to clear cache
+    VERSION: '1.0.3', // Bumped version to clear cache
 
 
     CACHE_DURATION: 300000,

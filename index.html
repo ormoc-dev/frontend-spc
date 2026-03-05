@@ -63,7 +63,29 @@
     </div>
 
     <!-- Main Application Script -->
-    <script src="assets/js/app.js?v=14"></script>
+    <script src="assets/js/app.js?v=15"></script>
+
+    <!-- Watchdog & Debug -->
+    <script>
+        // Detection for hangs on mobile
+        window.addEventListener('error', function (e) {
+            console.error('Global Error:', e.message);
+            const statusBox = document.querySelector('.loading-screen p');
+            if (statusBox) {
+                statusBox.style.color = '#e11d48';
+                statusBox.innerHTML = 'Error: ' + e.message + '<br><small>Check console or reload</small>';
+            }
+        });
+
+        setTimeout(() => {
+            const loadingScreen = document.querySelector('.loading-screen');
+            if (loadingScreen && loadingScreen.offsetParent !== null) {
+                console.warn('App still loading after 5s - showing fallback');
+                const statusBox = loadingScreen.querySelector('p');
+                if (statusBox) statusBox.innerHTML += '<br><button onclick="location.reload()" style="margin-top:10px; padding:5px 10px; background:#2563eb; color:white; border:none; border-radius:4px;">Force Reload</button>';
+            }
+        }, 5000);
+    </script>
 
     <!-- Initialize -->
     <script>

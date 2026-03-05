@@ -11,26 +11,46 @@ const App = {
      * Initialize the application
      */
     init() {
-        this.container = document.getElementById('app');
-        console.log('SmartPath Cane initialized');
+        try {
+            this.container = document.getElementById('app');
+            console.log('SmartPath Cane initializing...');
 
-        // PWA Install Prompt
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            this.deferredPrompt = e;
-            // The button is initially hidden or shown based on your CSS
-            // but we can ensure it's visible here if needed
-        });
+            // PWA Install Prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                this.deferredPrompt = e;
+            });
 
-        // Check for existing auth session
-        const hasSession = Auth.init();
-        if (hasSession) {
-            console.log('Restored session for:', Auth.getUser()?.email);
-            this.showDashboard();
-        } else {
-            this.renderLanding();
+            // Check for existing auth session
+            const hasSession = Auth.init();
+            if (hasSession) {
+                this.showDashboard();
+            } else {
+                this.renderLanding();
+            }
+            this.attachEventListeners();
+
+            console.log('App initialized successfully');
+        } catch (error) {
+            console.error('App Initialization Failed:', error);
+            this.handleInitError(error);
         }
-        this.attachEventListeners();
+    },
+
+    /**
+     * Fallback for initialization errors
+     */
+    handleInitError(error) {
+        if (this.container) {
+            this.container.innerHTML = `
+                <div style="padding: 40px; text-align: center; font-family: sans-serif;">
+                    <h2 style="color: #e11d48;">Initialization Error</h2>
+                    <p>Something went wrong while starting the app.</p>
+                    <p style="font-size: 0.8rem; color: #666; margin-top: 20px;">${error.message}</p>
+                    <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 20px;">Retry</button>
+                </div>
+            `;
+        }
     },
 
     /**

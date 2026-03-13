@@ -144,7 +144,7 @@ const Dashboard = {
             <a href="#${item.id}" class="dashboard-nav-item ${item.id === this.currentTab ? 'active' : ''}" 
                 data-tab="${item.id}">
                 <span class="dashboard-nav-icon">${item.icon}</span>
-                <span>${item.label}</span>
+                <span class="dashboard-nav-label">${item.label}</span>
                 ${item.badge !== undefined ? `<span class="badge" style="${item.badge > 0 ? '' : 'display:none'}">${item.badge}</span>` : ''}
             </a>
         `).join('');

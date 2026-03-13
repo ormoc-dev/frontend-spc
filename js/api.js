@@ -120,15 +120,6 @@ window.AlertAPI = {
     resolve: function (id) { return window.api.put('/api/alerts/' + id + '/resolve'); }
 };
 
-// Geofence API
-window.GeofenceAPI = {
-    list: function () { return window.api.get('/api/geofences'); },
-    get: function (id) { return window.api.get('/api/geofences/' + id); },
-    create: function (data) { return window.api.post('/api/geofences', data); },
-    update: function (id, data) { return window.api.put('/api/geofences/' + id, data); },
-    delete: function (id) { return window.api.delete('/api/geofences/' + id); }
-};
-
 // Export APIs
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -137,7 +128,6 @@ if (typeof module !== 'undefined' && module.exports) {
         AuthAPI: window.AuthAPI,
         UserAPI: window.UserAPI,
         DeviceAPI: window.DeviceAPI,
-        AlertAPI: window.AlertAPI,
-        GeofenceAPI: window.GeofenceAPI
+        AlertAPI: window.AlertAPI
     };
 }

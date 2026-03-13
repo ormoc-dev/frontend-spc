@@ -204,7 +204,6 @@ const App = {
         const features = [
             { icon: '📍', title: 'Real-Time Tracking', desc: 'GPS location updates every 30 seconds' },
             { icon: '🚨', title: 'Emergency Alerts', desc: 'Instant SOS notifications to caregivers' },
-            { icon: '🗺️', title: 'Safe Zones', desc: 'Custom geofences with entry/exit alerts' },
             { icon: '🔋', title: 'Smart Monitoring', desc: 'Battery and connectivity status' }
         ];
 

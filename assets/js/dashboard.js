@@ -112,8 +112,8 @@ const Dashboard = {
             case 'alerts':
                 Alerts.init();
                 break;
-            case 'geofences':
-                Geofences.init();
+            case 'alerts':
+                Alerts.init();
                 break;
             case 'settings':
                 const sName = document.getElementById('settings-first-name');
@@ -136,7 +136,6 @@ const Dashboard = {
             { id: 'devices', icon: '🦯', label: 'Devices' },
             { id: 'locations', icon: '📍', label: 'Locations' },
             { id: 'alerts', icon: '🚨', label: 'Alerts', badge: this.activeAlertCount },
-            { id: 'geofences', icon: '🗺️', label: 'Geofences' },
             { id: 'settings', icon: '⚙️', label: 'Settings' }
         ];
 
@@ -247,12 +246,12 @@ const Dashboard = {
     },
 
     getAlertTitle(alert) {
-        const titles = { sos: 'Emergency SOS Button Pressed', fall: 'Fall Detection Alert', battery_low: 'Low Battery Alert', geofence_exit: 'Geofence Exit Alert' };
+        const titles = { sos: 'Emergency SOS Button Pressed', fall: 'Fall Detection Alert', battery_low: 'Low Battery Alert' };
         return titles[alert.alert_type] || 'New Alert';
     },
 
     getAlertDescription(alert) {
-        const descs = { sos: 'User triggered emergency alert from device', fall: 'Potential fall detected by device', battery_low: 'Device battery level is critically low', geofence_exit: 'Device exited from designated safe zone' };
+        const descs = { sos: 'User triggered emergency alert from device', fall: 'Potential fall detected by device', battery_low: 'Device battery level is critically low' };
         return descs[alert.alert_type] || 'New alert received from device';
     },
 

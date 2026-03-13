@@ -35,6 +35,9 @@ const Dashboard = {
         const user = Auth.getUser();
 
         // Load shell
+        if (window.App && typeof window.App.updateLoadingHint === 'function') {
+            window.App.updateLoadingHint('Fetching dashboard template...');
+        }
         const shell = await this.fetchTemplate('dashboard');
         container.innerHTML = shell;
 
@@ -43,10 +46,18 @@ const Dashboard = {
         this.renderSidebar();
         this.attachListeners();
 
+        if (window.App && typeof window.App.updateLoadingHint === 'function') {
+            window.App.updateLoadingHint('Initializing real-time alerts...');
+        }
+
         const savedTab = localStorage.getItem('dashboard_current_tab') || 'overview';
         this.loadTab(savedTab);
         this.initAudioContext();
         this.initRealtimeAlerts();
+
+        if (window.App && typeof window.App.updateLoadingHint === 'function') {
+            window.App.updateLoadingHint('Ready');
+        }
     },
 
     /**

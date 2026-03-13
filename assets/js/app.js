@@ -14,6 +14,7 @@ const App = {
         try {
             this.container = document.getElementById('app');
             console.log('SmartPath Cane initializing...');
+            this.updateLoadingHint('Checking security...');
 
             // PWA Install Prompt
             window.addEventListener('beforeinstallprompt', (e) => {
@@ -22,10 +23,13 @@ const App = {
             });
 
             // Check for existing auth session
+            this.updateLoadingHint('Synchronizing session...');
             const hasSession = Auth.init();
             if (hasSession) {
+                this.updateLoadingHint('Loading dashboard shell...');
                 this.showDashboard();
             } else {
+                this.updateLoadingHint('Preparing landing page...');
                 this.renderLanding();
             }
             this.attachEventListeners();
@@ -34,6 +38,17 @@ const App = {
         } catch (error) {
             console.error('App Initialization Failed:', error);
             this.handleInitError(error);
+        }
+    },
+
+    /**
+     * Helper to show loading progress on screen
+     */
+    updateLoadingHint(text) {
+        const hint = document.getElementById('loading-hint');
+        if (hint) {
+            hint.textContent = text;
+            hint.style.display = 'block';
         }
     },
 

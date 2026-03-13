@@ -88,22 +88,22 @@
             if (hint) hint.style.display = 'block';
         }, 2000);
 
-        // Watchdog: if still loading after 6s, show help buttons
+        // Watchdog: if still loading after 8s, show help buttons
         setTimeout(function () {
             var screen = document.querySelector('.loading-screen');
             if (screen && screen.offsetParent !== null) {
                 var el = document.getElementById('loading-status');
                 if (el) {
                     el.style.color = '#111';
-                    el.innerHTML = '<span style="color:#e11d48;font-weight:600">Taking longer than usual</span><br>' +
-                        '<p style="font-size:13px;margin:8px 0 16px;opacity:0.8">This might be due to a slow connection or cache issue.</p>' +
-                        '<div style="display:flex;gap:8px;justify-content:center">' +
-                        '<button onclick="location.reload(true)" style="padding:10px 18px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;">Retry</button>' +
-                        '<button onclick="nukePWA()" style="padding:10px 18px;background:#111;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;">Reset App</button>' +
+                    el.innerHTML = '<span style="color:#e11d48;font-weight:600">App Initialization Stalled</span><br>' +
+                        '<p style="font-size:13px;margin:8px 0 16px;opacity:0.8;max-width:280px;line-height:1.4">This usually happens on local mobile connections or if the cache is corrupted.</p>' +
+                        '<div style="display:flex;flex-direction:column;gap:8px;align-items:center">' +
+                        '<button onclick="location.reload(true)" style="width:200px;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;">Retry Connection</button>' +
+                        '<button onclick="nukePWA()" style="width:200px;padding:10px;background:#111;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;opacity:0.8">Reset & Clear Cache</button>' +
                         '</div>';
                 }
             }
-        }, 6000);
+        }, 8000);
 
         function nukePWA() {
             if (confirm('This will clear the app cache and reset the connection. Continue?')) {
@@ -139,35 +139,39 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- API Client -->
-    <script src="js/api.js?v=7"></script>
+    <script src="js/api.js?v=7" onload="console.log('✔ API Client loaded')"></script>
 
     <!-- App Modules -->
-    <script src="assets/js/ui.js?v=15"></script>
-    <script src="assets/js/maps.js?v=23"></script>
-    <script src="assets/js/auth.js?v=15"></script>
+    <script src="assets/js/ui.js?v=15" onload="console.log('✔ UI loaded')"></script>
+    <script src="assets/js/maps.js?v=23" onload="console.log('✔ Maps loaded')"></script>
+    <script src="assets/js/auth.js?v=15" onload="console.log('✔ Auth loaded')"></script>
 
     <!-- Dashboard Modular Components -->
-    <script src="assets/js/dashboard/overview.js"></script>
-    <script src="assets/js/dashboard/devices.js"></script>
-    <script src="assets/js/dashboard/locations.js"></script>
-    <script src="assets/js/dashboard/alerts.js"></script>
-    <script src="assets/js/dashboard/geofences.js"></script>
-    <script src="assets/js/dashboard/settings.js"></script>
+    <script src="assets/js/dashboard/overview.js" onload="console.log('✔ Overview module loaded')"></script>
+    <script src="assets/js/dashboard/devices.js" onload="console.log('✔ Devices module loaded')"></script>
+    <script src="assets/js/dashboard/locations.js" onload="console.log('✔ Locations module loaded')"></script>
+    <script src="assets/js/dashboard/alerts.js" onload="onload = console.log('✔ Alerts module loaded')"></script>
+    <script src="assets/js/dashboard/geofences.js" onload="console.log('✔ Geofences module loaded')"></script>
+    <script src="assets/js/dashboard/settings.js" onload="console.log('✔ Settings module loaded')"></script>
 
     <!-- Dashboard Orchestrator -->
-    <script src="assets/js/dashboard.js?t=20240319"></script>
+    <script src="assets/js/dashboard.js?t=20240319" onload="console.log('✔ Dashboard orchestrator loaded')"></script>
 
     <!-- Main App -->
-    <script src="assets/js/app.js?v=17"></script>
+    <script src="assets/js/app.js?v=17" onload="console.log('✔ Main App loaded')"></script>
 
     <!-- Service Worker registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register('sw.js')
-                    .then(function () { console.log('[SW] Registered'); })
-                    .catch(function (e) { console.warn('[SW] Error:', e); });
-            });
+            // Register immediately to ensure assets are cached ASAP
+            navigator.serviceWorker.register('sw.js')
+                .then(function () { console.log('[SW] Registered'); })
+                .catch(function (e) {
+                    console.warn('[SW] Error:', e);
+                    // Show specific SW error on screen if registration fails
+                    var el = document.getElementById('loading-hint');
+                    if (el) el.textContent = 'PWA Error: ' + e.message;
+                });
         }
     </script>
 </body>

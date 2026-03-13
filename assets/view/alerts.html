@@ -1,0 +1,23 @@
+<div class="dashboard-tab-header">
+    <div>
+        <h1 class="dashboard-title">Alerts</h1>
+    </div>
+    <select class="form-select form-select-sm" id="alert-filter">
+        <option value="all">All Alerts</option>
+        <option value="unresolved">Unresolved</option>
+        <option value="sos">SOS Alerts</option>
+        <option value="fall">Fall Alerts</option>
+    </select>
+</div>
+
+<div class="dashboard-card">
+    <div class="dashboard-card-body">
+        <div class="alert-list" id="alert-list">
+            <div class="empty-state">
+                <div class="empty-icon">🚨</div>
+                <h3>No alerts yet</h3>
+                <p>Waiting for alerts from connected devices.</p>
+            </div>
+        </div>
+    </div>
+</div>

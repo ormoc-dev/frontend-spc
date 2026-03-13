@@ -14,8 +14,11 @@ window.CONFIG = {
         ? 'http://' + hostname + '/smartpathcane/backend-spc/public'
         : 'https://floralwhite-raccoon-333018.hostingersite.com/backend-spc/public',
 
+    SUPABASE_URL: 'https://ksoukgxagrpaleedqqua.supabase.co',
+    SUPABASE_KEY: 'sb_publishable_Ku5jRYPcCchUGsET6gRNBw_wzqfFQg7',
+
     APP_NAME: 'SmartPath Cane',
-    VERSION: '1.0.4', // Bumped version to force refresh
+    VERSION: '1.0.8', // Bumped version to force refresh
 
     CACHE_DURATION: 300000,
     MAX_RETRIES: 3,

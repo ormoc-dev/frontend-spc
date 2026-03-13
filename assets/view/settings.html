@@ -1,0 +1,40 @@
+<div class="dashboard-tab-header">
+    <h1 class="dashboard-title">Settings</h1>
+</div>
+
+<div class="settings-grid">
+    <div class="dashboard-card">
+        <div class="dashboard-card-header">
+            <h3 class="dashboard-card-title">Profile</h3>
+        </div>
+        <div class="dashboard-card-body">
+            <form class="settings-form">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" id="settings-first-name" value="">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="settings-email" value="" readonly>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="dashboard-card-header">
+            <h3 class="dashboard-card-title">Notifications</h3>
+        </div>
+        <div class="dashboard-card-body">
+            <label class="settings-option">
+                <input type="checkbox" checked>
+                <span class="settings-option-label">SOS Alerts</span>
+            </label>
+            <label class="settings-option">
+                <input type="checkbox" checked>
+                <span class="settings-option-label">Geofence Alerts</span>
+            </label>
+        </div>
+    </div>
+</div>

@@ -2,7 +2,7 @@
  * Service Worker - SmartPath Cane
  * Strategy: HTML = Network First (never stale), Assets = Cache First
  */
-const CACHE_NAME = 'smartpath-cane-v4';
+const CACHE_NAME = 'smartpath-cane-v5';
 const STATIC_ASSETS = [
   './assets/css/main.css',
   './assets/css/components.css',
@@ -12,6 +12,19 @@ const STATIC_ASSETS = [
   './assets/js/auth.js',
   './assets/js/dashboard.js',
   './js/api.js',
+  './assets/js/dashboard/overview.js',
+  './assets/js/dashboard/devices.js',
+  './assets/js/dashboard/locations.js',
+  './assets/js/dashboard/alerts.js',
+  './assets/js/dashboard/geofences.js',
+  './assets/js/dashboard/settings.js',
+  './assets/view/dashboard.html',
+  './assets/view/overview.html',
+  './assets/view/devices.html',
+  './assets/view/locations.html',
+  './assets/view/alerts.html',
+  './assets/view/geofences.html',
+  './assets/view/settings.html',
   './assets/images/icon-512.png'
 ];
 
@@ -53,28 +66,50 @@ self.addEventListener('fetch', function (event) {
   // Only handle http/https
   if (url.indexOf('http') !== 0) return;
 
-  // HTML pages: always fetch from network (critical for config to work!)
+  // 1. API Requests: Always Network Only (Don't cache database data in SW)
+  if (url.includes('/api/') || url.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 2. HTML and Views: Network First (prioritize newest layout)
   var isHTML = event.request.headers.get('accept') &&
     event.request.headers.get('accept').indexOf('text/html') !== -1;
-  if (isHTML || url.endsWith('.html')) {
+  var isView = url.includes('/assets/view/');
+
+  if (isHTML || isView || url.endsWith('.html')) {
     event.respondWith(
-      fetch(event.request).catch(function () {
+      fetch(event.request).then(function (response) {
+        // Cache the newest version if fetch succeeds
+        if (response.status === 200) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, clone);
+          });
+        }
+        return response;
+      }).catch(function () {
         return caches.match(event.request);
       })
     );
     return;
   }
 
-  // Static assets: Cache first, network fallback
+  // 3. Static Assets (CSS, JS, Images): Cache First
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then(function (cached) {
       if (cached) return cached;
       return fetch(event.request).then(function (response) {
         if (!response || response.status !== 200) return response;
-        var clone = response.clone();
-        caches.open(CACHE_NAME).then(function (cache) {
-          cache.put(event.request, clone);
-        });
+
+        // Cache persistent assets
+        if (event.request.method === 'GET') {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, clone);
+          });
+        }
+
         return response;
       });
     })

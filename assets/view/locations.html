@@ -1,0 +1,63 @@
+<div class="dashboard-tab-header">
+    <div>
+        <h1 class="dashboard-title">Live Location</h1>
+        <p class="dashboard-subtitle">Real-time device tracking</p>
+    </div>
+    <span class="status-badge status-online">● Online</span>
+</div>
+
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <h3 class="dashboard-card-title">📍 Current Position</h3>
+        <span class="coming-soon-badge">Live</span>
+    </div>
+    <div class="dashboard-card-body">
+        <div class="form-group" style="margin-bottom: var(--space-4);">
+            <label class="form-label">Select Device</label>
+            <select class="form-select" id="live-device-selector">
+                <option value="">Loading devices...</option>
+            </select>
+        </div>
+        <div class="full-map" id="live-location-map"></div>
+        <div class="location-info" id="live-location-info" style="margin-top: var(--space-4);">
+            <div class="location-item">
+                <span class="location-label">Device</span>
+                <span class="location-value" id="live-device-name">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Coordinates</span>
+                <span class="location-value" id="live-coordinates">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Last Updated</span>
+                <span class="location-value" id="live-last-updated">-</span>
+            </div>
+            <div class="location-item">
+                <span class="location-label">Accuracy</span>
+                <span class="location-value" id="live-accuracy">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-tab-header" style="margin-top: var(--space-8);">
+    <div>
+        <h1 class="dashboard-title">Location History</h1>
+        <p class="dashboard-subtitle">Past location records</p>
+    </div>
+    <select class="form-select form-select-sm">
+        <option>Last 24 Hours</option>
+        <option>Last 7 Days</option>
+        <option>Last 30 Days</option>
+    </select>
+</div>
+
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <h3 class="dashboard-card-title">📊 Movement History</h3>
+        <span class="coming-soon-badge coming-soon-badge-soon">Coming Soon</span>
+    </div>
+    <div class="dashboard-card-body">
+        <div class="full-map" id="locations-map" style="opacity: 0.6;"></div>
+    </div>
+</div>

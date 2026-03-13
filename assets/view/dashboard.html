@@ -1,0 +1,35 @@
+<header class="dashboard-header">
+    <div class="dashboard-header-brand">
+        <span class="dashboard-header-icon">🦯</span>
+        <span>S.P.C</span>
+    </div>
+    <div class="dashboard-header-actions">
+        <button class="btn btn-outline btn-sm" id="btn-back">
+            ← Back to Site
+        </button>
+        <div class="user-menu">
+            <button class="user-menu-toggle" id="user-menu-toggle">
+                <span class="user-avatar" id="user-initials"></span>
+                <span class="user-name hidden-sm" id="user-name-display">User</span>
+                <span>▼</span>
+            </button>
+            <div class="user-menu-dropdown hidden" id="user-menu-dropdown">
+                <a href="#" class="user-menu-item" data-tab="settings">Settings</a>
+                <hr class="user-menu-divider">
+                <button class="user-menu-item user-menu-logout" id="btn-logout">Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+<main class="dashboard">
+    <aside class="dashboard-sidebar">
+        <nav class="dashboard-nav" id="dashboard-sidebar-nav">
+            <!-- Navigation items will be injected here -->
+        </nav>
+    </aside>
+    <div class="dashboard-main" id="dashboard-main">
+        <div class="dashboard-content" id="dashboard-content">
+            <!-- Tab content loaded here -->
+        </div>
+    </div>
+</main>

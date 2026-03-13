@@ -41,7 +41,16 @@
         // Global error handler - catches errors before app loads
         window.onerror = function (msg, url, line) {
             var el = document.getElementById('loading-status');
-            if (el) { el.style.color = '#e11d48'; el.textContent = 'Error: ' + msg + ' (L' + line + ')'; }
+            if (el) {
+                el.style.color = '#e11d48';
+                // More detailed error for MIME type issues
+                if (msg.indexOf('MIME type') !== -1) {
+                    el.innerHTML = '<span style="font-weight:600">PWA Loading Error</span><br>' +
+                        '<span style="font-size:12px;opacity:0.8">Unsupported MIME type. This usually means a script was not found and the server returned a 404 page instead.</span>';
+                } else {
+                    el.textContent = 'Error: ' + msg + ' (L' + line + ')';
+                }
+            }
             console.error('App Error:', msg, url, line);
         };
 
@@ -139,26 +148,38 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- API Client -->
-    <script src="js/api.js?v=7" onload="console.log('✔ API Client loaded')"></script>
+    <script src="js/api.js?v=7" onload="console.log('✔ API Client loaded')"
+        onerror="console.error('✘ Failed to load api.js')"></script>
 
     <!-- App Modules -->
-    <script src="assets/js/ui.js?v=15" onload="console.log('✔ UI loaded')"></script>
-    <script src="assets/js/maps.js?v=23" onload="console.log('✔ Maps loaded')"></script>
-    <script src="assets/js/auth.js?v=15" onload="console.log('✔ Auth loaded')"></script>
+    <script src="assets/js/ui.js?v=15" onload="console.log('✔ UI loaded')"
+        onerror="console.error('✘ Failed to load ui.js')"></script>
+    <script src="assets/js/maps.js?v=23" onload="console.log('✔ Maps loaded')"
+        onerror="console.error('✘ Failed to load maps.js')"></script>
+    <script src="assets/js/auth.js?v=15" onload="console.log('✔ Auth loaded')"
+        onerror="console.error('✘ Failed to load auth.js')"></script>
 
     <!-- Dashboard Modular Components -->
-    <script src="assets/js/dashboard/overview.js" onload="console.log('✔ Overview module loaded')"></script>
-    <script src="assets/js/dashboard/devices.js" onload="console.log('✔ Devices module loaded')"></script>
-    <script src="assets/js/dashboard/locations.js" onload="console.log('✔ Locations module loaded')"></script>
-    <script src="assets/js/dashboard/alerts.js" onload="onload = console.log('✔ Alerts module loaded')"></script>
-    <script src="assets/js/dashboard/geofences.js" onload="console.log('✔ Geofences module loaded')"></script>
-    <script src="assets/js/dashboard/settings.js" onload="console.log('✔ Settings module loaded')"></script>
+    <script src="assets/js/dashboard/overview.js" onload="console.log('✔ Overview module loaded')"
+        onerror="console.error('✘ Failed to load overview.js')"></script>
+    <script src="assets/js/dashboard/devices.js" onload="console.log('✔ Devices module loaded')"
+        onerror="console.error('✘ Failed to load devices.js')"></script>
+    <script src="assets/js/dashboard/locations.js" onload="console.log('✔ Locations module loaded')"
+        onerror="console.error('✘ Failed to load locations.js')"></script>
+    <script src="assets/js/dashboard/alerts.js" onload="console.log('✔ Alerts module loaded')"
+        onerror="console.error('✘ Failed to load alerts.js')"></script>
+    <script src="assets/js/dashboard/geofences.js" onload="console.log('✔ Geofences module loaded')"
+        onerror="console.error('✘ Failed to load geofences.js')"></script>
+    <script src="assets/js/dashboard/settings.js" onload="console.log('✔ Settings module loaded')"
+        onerror="console.error('✘ Failed to load settings.js')"></script>
 
     <!-- Dashboard Orchestrator -->
-    <script src="assets/js/dashboard.js?t=20240319" onload="console.log('✔ Dashboard orchestrator loaded')"></script>
+    <script src="assets/js/dashboard.js?t=20240319" onload="console.log('✔ Dashboard orchestrator loaded')"
+        onerror="console.error('✘ Failed to load dashboard.js')"></script>
 
     <!-- Main App -->
-    <script src="assets/js/app.js?v=17" onload="console.log('✔ Main App loaded')"></script>
+    <script src="assets/js/app.js?v=17" onload="console.log('✔ Main App loaded')"
+        onerror="console.error('✘ Failed to load app.js')"></script>
 
     <!-- Service Worker registration -->
     <script>

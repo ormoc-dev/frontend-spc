@@ -74,16 +74,15 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // 2. HTML and Views: Network First (prioritize newest layout)
-  var isHTML = event.request.headers.get('accept') &&
-    event.request.headers.get('accept').indexOf('text/html') !== -1;
-  var isView = url.includes('/assets/view/');
+  // 2. HTML and Navigation: Network First
+  const isNav = event.request.mode === 'navigate';
+  const isView = url.includes('/assets/view/');
 
-  if (isHTML || isView || url.endsWith('.html')) {
+  if (isNav || isView || url.endsWith('.html')) {
     event.respondWith(
       fetch(event.request).then(function (response) {
-        // Cache the newest version if fetch succeeds
-        if (response.status === 200) {
+        // Only cache successful standard responses
+        if (response.status === 200 && response.type === 'basic') {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function (cache) {
             cache.put(event.request, clone);
@@ -91,6 +90,7 @@ self.addEventListener('fetch', function (event) {
         }
         return response;
       }).catch(function () {
+        // Fallback to cache if offline
         return caches.match(event.request);
       })
     );

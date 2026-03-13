@@ -1100,7 +1100,7 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-1);
-    padding: var(--space-2) var(--space-1);
+    padding: var(--space-3) var(--space-1);
     color: var(--gray-600);
     text-decoration: none;
     font-size: 10px;
@@ -1110,6 +1110,14 @@
     transition: all var(--transition-fast);
     text-transform: uppercase;
     letter-spacing: 0.02em;
+}
+
+.dashboard-nav-icon {
+    font-size: 24px;
+}
+
+.dashboard-nav-item span:last-of-type:not(.dashboard-nav-icon) {
+    display: none;
 }
 
 .dashboard-nav-item:hover {
@@ -1867,6 +1875,10 @@
         font-size: var(--text-sm);
         text-transform: none;
         letter-spacing: normal;
+    }
+
+    .dashboard-nav-item span:last-of-type:not(.dashboard-nav-icon) {
+        display: inline;
     }
 
     .dashboard-main {

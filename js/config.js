@@ -18,7 +18,7 @@ window.CONFIG = {
     SUPABASE_KEY: 'sb_publishable_Ku5jRYPcCchUGsET6gRNBw_wzqfFQg7',
 
     APP_NAME: 'SmartPath Cane',
-    VERSION: '1.0.8', // Bumped version to force refresh
+    VERSION: '1.0.9', // Bumped version to force refresh
 
     CACHE_DURATION: 300000,
     MAX_RETRIES: 3,

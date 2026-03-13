@@ -2,7 +2,7 @@
  * Service Worker - SmartPath Cane
  * Strategy: HTML = Network First (never stale), Assets = Cache First
  */
-const CACHE_NAME = 'smartpath-cane-v7';
+const CACHE_NAME = 'smartpath-cane-v8';
 const STATIC_ASSETS = [
   'assets/css/main.css',
   'assets/css/components.css',

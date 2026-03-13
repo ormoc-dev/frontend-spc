@@ -2,7 +2,7 @@
  * Service Worker - SmartPath Cane
  * Strategy: HTML = Network First (never stale), Assets = Cache First
  */
-const CACHE_NAME = 'smartpath-cane-v6';
+const CACHE_NAME = 'smartpath-cane-v7';
 const STATIC_ASSETS = [
   'assets/css/main.css',
   'assets/css/components.css',
@@ -27,7 +27,9 @@ const STATIC_ASSETS = [
   'assets/view/geofences.html',
   'assets/view/settings.html',
   'assets/images/icon-512.png',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 ];
 
 // Install - pre-cache only static assets (NOT index.html or config.js)

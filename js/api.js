@@ -90,7 +90,31 @@ window.AuthAPI = {
     logout: function () { return window.api.post('/api/auth/logout'); },
     me: function () { return window.api.get('/api/auth/me'); },
     forgotPassword: function (email) { return window.api.post('/api/auth/forgot-password', { email: email }); },
-    resetPassword: function (token, password) { return window.api.post('/api/auth/reset-password', { token: token, password: password }); }
+    resetPassword: function (token, password) { return window.api.post('/api/auth/reset-password', { token: token, password: password }); },
+
+    /**
+     * OAuth Social Login
+     * Redirects directly to Supabase
+     */
+    signInWithOAuth: async function (provider) {
+        // We can use the Supabase JS client already loaded in index.html
+        if (!window.supabase) {
+            throw new Error('Supabase client not loaded');
+        }
+
+        const supabaseUrl = window.CONFIG.SUPABASE_URL;
+        const supabaseKey = window.CONFIG.SUPABASE_KEY;
+        const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const { error } = await client.auth.signInWithOAuth({
+            provider: provider,
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+
+        if (error) throw error;
+    }
 };
 
 // User API

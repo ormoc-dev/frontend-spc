@@ -10,7 +10,7 @@ const App = {
     /**
      * Initialize the application
      */
-    init() {
+    async init() {
         try {
             this.container = document.getElementById('app');
             console.log('SmartPath Cane initializing...');
@@ -22,9 +22,9 @@ const App = {
                 this.deferredPrompt = e;
             });
 
-            // Check for existing auth session
+            // Check for existing auth session or redirect tokens
             this.updateLoadingHint('Synchronizing session...');
-            const hasSession = Auth.init();
+            const hasSession = await Auth.init();
             if (hasSession) {
                 this.updateLoadingHint('Loading dashboard shell...');
                 this.showDashboard();

@@ -10,7 +10,31 @@ const Auth = {
     /**
      * Initialize auth - check for existing session
      */
-    init() {
+    async init() {
+        // 1. Check for tokens in URL hash (Supabase OAuth/Confirmation redirect)
+        if (window.location.hash && window.location.hash.includes('access_token=')) {
+            try {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = params.get('access_token');
+
+                if (accessToken) {
+                    api.setToken(accessToken);
+                    // Verify with backend and get profile
+                    const response = await AuthAPI.me();
+                    if (response.success) {
+                        this.saveSession(response.data, accessToken);
+                        // Clear the hash without reloading
+                        history.replaceState(null, null, ' ');
+                        return true;
+                    }
+                }
+            } catch (err) {
+                console.error('OAuth token verification failed:', err);
+                api.clearToken();
+            }
+        }
+
+        // 2. Fallback to localStorage
         const savedUser = localStorage.getItem('spc_user');
         const savedToken = localStorage.getItem('spc_token');
 
@@ -46,42 +70,67 @@ const Auth = {
      * Show auth modal
      */
     showModal(mode = 'login') {
-        const content = `
-            <h2 class="modal-title">${mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
-            <p class="modal-subtitle">${mode === 'login' ? 'Sign in to your account' : 'Join SmartPath Cane today'}</p>
-            
-            <form class="auth-form" id="auth-form">
-                <div class="auth-error" id="auth-error"></div>
-                
-                ${mode === 'register' ? `
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-input" id="auth-fullname" required placeholder="Enter your full name">
+        let content = '';
+
+        if (mode === 'confirmation_sent') {
+            content = `
+                <div class="confirmation-view">
+                    <span class="confirmation-icon">📧</span>
+                    <h2 class="confirmation-title">Check your email</h2>
+                    <p class="confirmation-text">
+                        We've sent a verification link to your email address. 
+                        Please click the link to confirm your account.
+                    </p>
+                    <button class="btn btn-primary" id="btn-confirmation-ok">Got it</button>
                 </div>
-                ` : ''}
+            `;
+        } else {
+            content = `
+                <h2 class="modal-title">${mode === 'login' ? 'Welcome Back' : 'Create Account'}</h2>
+                <p class="modal-subtitle">${mode === 'login' ? 'Sign in to your account' : 'Join SmartPath Cane today'}</p>
                 
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="auth-email" required placeholder="Enter your email">
+                <div class="social-auth">
+                    <button class="social-btn" id="btn-oauth-google">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                        Sign in with Google
+                    </button>
                 </div>
+
+                <div class="auth-divider">OR</div>
+
+                <form class="auth-form" id="auth-form">
+                    <div class="auth-error" id="auth-error"></div>
+                    
+                    ${mode === 'register' ? `
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="auth-fullname" required placeholder="Enter your full name">
+                    </div>
+                    ` : ''}
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="auth-email" required placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="auth-password" required placeholder="Enter your password" minlength="6">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">
+                        ${mode === 'login' ? 'Sign In' : 'Create Account'}
+                    </button>
+                </form>
                 
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="auth-password" required placeholder="Enter your password" minlength="6">
+                <div class="modal-footer">
+                    <p>${mode === 'login' ? "Don't have an account?" : 'Already have an account?'}</p>
+                    <button type="button" class="btn-link" id="auth-toggle">
+                        ${mode === 'login' ? 'Create Account' : 'Sign In'}
+                    </button>
                 </div>
-                
-                <button type="submit" class="btn btn-primary btn-lg" id="auth-submit">
-                    ${mode === 'login' ? 'Sign In' : 'Create Account'}
-                </button>
-            </form>
-            
-            <div class="modal-footer">
-                <p>${mode === 'login' ? "Don't have an account?" : 'Already have an account?'}</p>
-                <button type="button" class="btn-link" id="auth-toggle">
-                    ${mode === 'login' ? 'Create Account' : 'Sign In'}
-                </button>
-            </div>
-        `;
+            `;
+        }
 
         this.modal = UI.showModal(content);
         this.attachModalListeners(mode);
@@ -94,14 +143,29 @@ const Auth = {
         const form = document.getElementById('auth-form');
         const toggleBtn = document.getElementById('auth-toggle');
         const errorDiv = document.getElementById('auth-error');
+        const confirmOkBtn = document.getElementById('btn-confirmation-ok');
+        const googleBtn = document.getElementById('btn-oauth-google');
+
+        // OAuth Handling
+        googleBtn?.addEventListener('click', () => {
+            AuthAPI.signInWithOAuth('google').catch(err => {
+                if (errorDiv) errorDiv.textContent = err.message;
+            });
+        });
+
+        // Confirmation OK
+        confirmOkBtn?.addEventListener('click', () => {
+            this.modal?.close();
+        });
 
         // Form submission
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            errorDiv.textContent = '';
+            if (errorDiv) errorDiv.textContent = '';
 
             const submitBtn = document.getElementById('auth-submit');
             submitBtn.disabled = true;
+            const originalText = submitBtn.textContent;
             submitBtn.textContent = 'Please wait...';
 
             const data = {
@@ -116,19 +180,38 @@ const Auth = {
                     : await AuthAPI.register(data);
 
                 if (response.success) {
-                    this.saveSession(response.data?.user, response.data?.token);
-                    this.modal?.close();
-                    UI.showToast(mode === 'login' ? 'Welcome back!' : 'Account created!', 'success');
-                    App.showDashboard();
+                    if (response.data?.confirmation_pending) {
+                        this.modal?.close();
+                        this.showModal('confirmation_sent');
+                    } else {
+                        this.saveSession(response.data?.user, response.data?.token);
+                        this.modal?.close();
+                        UI.showToast(mode === 'login' ? 'Welcome back!' : 'Account created!', 'success');
+                        App.showDashboard();
+                    }
                 } else {
-                    errorDiv.textContent = response.error || 'Authentication failed';
+                    let msg = response.error || 'Authentication failed';
+                    // If error is a JSON string, try to parse its inner message
+                    if (typeof msg === 'string' && msg.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(msg);
+                            msg = parsed.msg || parsed.message || parsed.error_description || msg;
+                        } catch (e) { }
+                    }
+
+                    // Special handling for rate limits
+                    if (msg.includes('Too many requests')) {
+                        msg = 'Registration frequency limit reached. Please wait 5 minutes or contact support if the issue persists.';
+                    }
+
+                    if (errorDiv) errorDiv.textContent = msg;
                 }
             } catch (error) {
                 console.error('Auth error:', error);
-                errorDiv.textContent = error.message || 'Network error. Please try again.';
+                if (errorDiv) errorDiv.textContent = error.message || 'Network error. Please try again.';
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+                submitBtn.textContent = originalText;
             }
         });
 

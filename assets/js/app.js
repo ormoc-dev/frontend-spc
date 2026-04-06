@@ -8,12 +8,67 @@ const App = {
     deferredPrompt: null,
 
     /**
+     * Fetch public API status (maintenance flag). Returns null on failure (app runs normally).
+     */
+    async fetchAppStatus() {
+        var base = window.CONFIG && window.CONFIG.API_URL ? window.CONFIG.API_URL : '';
+        if (!base) return null;
+        var url;
+        if (base.indexOf('.php') !== -1) {
+            var sep = base.indexOf('?') !== -1 ? '&' : '?';
+            url = base + sep + 'path=' + encodeURIComponent('/api/status') + '&_t=' + Date.now();
+        } else {
+            url = base + '/api/status?t=' + Date.now();
+        }
+        try {
+            var res = await fetch(url, {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+                mode: 'cors'
+            });
+            if (!res.ok) return null;
+            return await res.json();
+        } catch (e) {
+            console.warn('App status check failed:', e);
+            return null;
+        }
+    },
+
+    /**
+     * Full-screen maintenance message (replaces app shell).
+     */
+    showMaintenance(message) {
+        var msg = message || 'We are performing scheduled maintenance. Please check back soon.';
+        if (!this.container) {
+            this.container = document.getElementById('app');
+        }
+        this.container.innerHTML = `
+            <div class="maintenance-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:Inter,system-ui,sans-serif;background:linear-gradient(160deg,#f8fafc 0%,#e2e8f0 100%);">
+                <div style="max-width:420px;background:#fff;border-radius:24px;padding:40px 32px;box-shadow:0 25px 50px -12px rgba(15,23,42,0.15);">
+                    <div style="font-size:48px;line-height:1;margin-bottom:20px;" aria-hidden="true">🛠️</div>
+                    <h1 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0 0 12px;letter-spacing:-0.02em;">Under maintenance</h1>
+                    <p style="font-size:0.95rem;color:#64748b;margin:0 0 24px;line-height:1.55;">${msg.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                    <button type="button" onclick="location.reload()" style="padding:12px 24px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Try again</button>
+                </div>
+            </div>`;
+    },
+
+    /**
      * Initialize the application
      */
     async init() {
         try {
             this.container = document.getElementById('app');
             console.log('SmartPath Cane initializing...');
+            this.updateLoadingHint('Checking service status...');
+
+            var appStatus = await this.fetchAppStatus();
+            if (appStatus && appStatus.maintenance === true) {
+                this.showMaintenance(appStatus.message);
+                return;
+            }
+
             this.updateLoadingHint('Checking security...');
 
             // PWA Install Prompt

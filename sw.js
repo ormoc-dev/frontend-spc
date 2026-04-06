@@ -2,7 +2,7 @@
  * Service Worker - SmartPath Cane
  * Strategy: HTML = Network First (never stale), Assets = Cache First
  */
-const CACHE_NAME = 'smartpath-cane-v11';
+const CACHE_NAME = 'smartpath-cane-v12';
 const STATIC_ASSETS = [
   'assets/css/main.css',
   'assets/css/components.css',
@@ -17,14 +17,12 @@ const STATIC_ASSETS = [
   'assets/js/dashboard/devices.js',
   'assets/js/dashboard/locations.js',
   'assets/js/dashboard/alerts.js',
-  'assets/js/dashboard/geofences.js',
   'assets/js/dashboard/settings.js',
   'assets/view/dashboard.html',
   'assets/view/overview.html',
   'assets/view/devices.html',
   'assets/view/locations.html',
   'assets/view/alerts.html',
-  'assets/view/geofences.html',
   'assets/view/settings.html',
   'assets/images/icon-512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
@@ -63,7 +61,22 @@ self.addEventListener('activate', function (event) {
   );
 });
 
-// Fetch - Network First for HTML, Cache First for static assets
+function spcSameOriginJsOrCss(requestUrl) {
+  try {
+    var u = new URL(requestUrl);
+    if (u.origin !== self.location.origin) return false;
+    return /\.(js|mjs|css)(\?|$)/i.test(u.pathname);
+  } catch (e) {
+    return false;
+  }
+}
+
+function spcLooksLikeHtmlResponse(response) {
+  var ct = (response.headers.get('content-type') || '').toLowerCase();
+  return ct.indexOf('text/html') !== -1;
+}
+
+// Fetch - Network first for HTML and same-origin JS/CSS (avoids cached "HTML as script")
 self.addEventListener('fetch', function (event) {
   var url = event.request.url;
 
@@ -76,7 +89,25 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // 2. HTML and Navigation: Network First
+  // 2. Same-origin JS/CSS: network first, then cache (never prefer stale HTML mistaken for JS)
+  if (spcSameOriginJsOrCss(url) && event.request.method === 'GET') {
+    event.respondWith(
+      fetch(event.request).then(function (response) {
+        if (response && response.status === 200 && response.type === 'basic' && !spcLooksLikeHtmlResponse(response)) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, clone);
+          });
+        }
+        return response;
+      }).catch(function () {
+        return caches.match(event.request, { ignoreSearch: true });
+      })
+    );
+    return;
+  }
+
+  // 3. HTML and Navigation: Network First
   const isNav = event.request.mode === 'navigate';
   const isView = url.includes('/assets/view/');
 
@@ -99,15 +130,14 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // 3. Static Assets (CSS, JS, Images): Cache First
+  // 4. Other static (images, etc.): Cache First
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then(function (cached) {
       if (cached) return cached;
       return fetch(event.request).then(function (response) {
         if (!response || response.status !== 200) return response;
 
-        // Cache persistent assets
-        if (event.request.method === 'GET') {
+        if (event.request.method === 'GET' && !spcLooksLikeHtmlResponse(response)) {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function (cache) {
             cache.put(event.request, clone);

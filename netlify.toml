@@ -4,11 +4,9 @@
 [build]
   publish = "."
 
-# Redirect rules for SPA (Single Page Application)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# No catch-all "/* -> index.html" rewrite: it can cause HTML to be served for missing
+# static files; the service worker then caches that as JS/CSS and the app never boots.
+# This site is a single-page shell (index.html); real paths are /assets/*, /js/*, etc.
 
 # Headers for security (all free)
 [[headers]]

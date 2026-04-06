@@ -90,7 +90,8 @@ const App = {
             this.updateLoadingHint('Checking service status...');
 
             var appStatus = await this.fetchAppStatus();
-            if (appStatus && appStatus.maintenance === true) {
+            var maint = appStatus && appStatus.maintenance;
+            if (maint === true || maint === 'true' || maint === 1) {
                 this.showMaintenance(appStatus.message);
                 return;
             }

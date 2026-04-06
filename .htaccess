@@ -1,0 +1,16 @@
+# SmartPath Cane — static frontend on XAMPP / Apache
+<IfModule mod_dir.c>
+    DirectoryIndex index.html
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Real files and folders (CSS, JS, images, sw.js, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Client app: all other paths -> index.html (same as Netlify)
+    RewriteRule ^ index.html [L]
+</IfModule>

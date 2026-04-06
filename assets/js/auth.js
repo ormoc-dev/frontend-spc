@@ -19,8 +19,13 @@ const Auth = {
 
                 if (accessToken) {
                     api.setToken(accessToken);
-                    // Verify with backend and get profile
-                    const response = await AuthAPI.me();
+                    // Verify with backend and get profile (do not hang forever if API is down)
+                    const meTimeout = new Promise(function (_, reject) {
+                        setTimeout(function () {
+                            reject(new Error('Session verification timed out'));
+                        }, 12000);
+                    });
+                    const response = await Promise.race([AuthAPI.me(), meTimeout]);
                     if (response.success) {
                         this.saveSession(response.data, accessToken);
                         // Clear the hash without reloading

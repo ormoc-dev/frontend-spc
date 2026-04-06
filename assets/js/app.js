@@ -9,30 +9,56 @@ const App = {
 
     /**
      * Fetch public API status (maintenance flag). Returns null on failure (app runs normally).
+     * Uses a hard timeout so a slow/unreachable API cannot block the UI forever.
      */
     async fetchAppStatus() {
-        var base = window.CONFIG && window.CONFIG.API_URL ? window.CONFIG.API_URL : '';
+        var base = (window.CONFIG && window.CONFIG.API_URL ? window.CONFIG.API_URL : '').replace(/\/$/, '');
         if (!base) return null;
-        var url;
+
+        var timeoutMs = 5000;
+        if (window.CONFIG && window.CONFIG.TIMEOUT) {
+            timeoutMs = Math.min(8000, Math.max(3000, window.CONFIG.TIMEOUT));
+        }
+
+        var urls = [];
         if (base.indexOf('.php') !== -1) {
             var sep = base.indexOf('?') !== -1 ? '&' : '?';
-            url = base + sep + 'path=' + encodeURIComponent('/api/status') + '&_t=' + Date.now();
+            urls.push(base + sep + 'path=' + encodeURIComponent('/api/status') + '&_t=' + Date.now());
         } else {
-            url = base + '/api/status?t=' + Date.now();
+            urls.push(base + '/api/status?t=' + Date.now());
+            urls.push(base + '/index.php?path=' + encodeURIComponent('/api/status') + '&_t=' + Date.now());
         }
-        try {
-            var res = await fetch(url, {
-                method: 'GET',
-                headers: { Accept: 'application/json' },
-                cache: 'no-store',
-                mode: 'cors'
-            });
-            if (!res.ok) return null;
-            return await res.json();
-        } catch (e) {
-            console.warn('App status check failed:', e);
-            return null;
+
+        for (var i = 0; i < urls.length; i++) {
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timer = null;
+            try {
+                if (ctrl) {
+                    timer = setTimeout(function () {
+                        try {
+                            ctrl.abort();
+                        } catch (abErr) { /* ignore */ }
+                    }, timeoutMs);
+                }
+                var res = await fetch(urls[i], {
+                    method: 'GET',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    mode: 'cors',
+                    signal: ctrl ? ctrl.signal : undefined
+                });
+                var ct = res.headers.get('content-type') || '';
+                if (!res.ok || ct.indexOf('application/json') === -1) {
+                    continue;
+                }
+                return await res.json();
+            } catch (e) {
+                console.warn('App status check failed (' + urls[i] + '):', e && e.name ? e.name : e);
+            } finally {
+                if (timer) clearTimeout(timer);
+            }
         }
+        return null;
     },
 
     /**
